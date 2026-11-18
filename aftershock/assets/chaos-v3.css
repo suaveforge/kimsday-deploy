@@ -1,0 +1,113 @@
+/* AFTERSHOCK CHAOS CUT v3 — irregular cinematic montage. No photo grids, cards or square containers. */
+.page { min-height:100svh; background:#090202; }
+.chaos-matte {
+  position:absolute; z-index:2; pointer-events:none;
+  inset:-1px 0 auto; width:100%; height:min(100svh,1000px);
+  background-image:
+    linear-gradient(180deg,rgba(3,1,1,.1) 0%,transparent 17%,rgba(5,1,1,.05) 61%,rgba(5,1,1,.16) 83%,#080302 100%),
+    url('chaos-matte.webp');
+  background-size:cover;
+  background-position:50% 45%;
+  opacity:1;
+  transform:scale(calc(1.012 + var(--world-p,0)*.08));
+  transform-origin:50% 38%;
+  filter:saturate(calc(1.08 + var(--world-p,0)*.40)) contrast(1.08);
+  contain:paint;
+}
+.aftershock-art {z-index:3;pointer-events:none;}
+.aftershock-art:before, .aftershock-art>.as-burn-scar,
+.aftershock-art>.as-stamp,.aftershock-art>.aftershock-survivor,
+.as-glitch-label,.as-files {display:none!important;}
+.page>.sky{opacity:.25!important;mix-blend-mode:screen;}
+.page>.ruins-matte{opacity:.13!important;}
+.page>.doom-art {opacity:.08!important;}
+.page>.world-bloodwash{opacity:.1!important;}
+.page>.monster-world{opacity:.45!important;}
+.page>.eclipse-progress {opacity:.58!important;}
+.container {position:relative;z-index:18;max-width:1530px;}
+.topbar {position:relative;z-index:50;}
+.topbar .top-right{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
+.topbar #chaosSongButton{
+  color:#fff0dc;white-space:nowrap;font:900 12px var(--font-kr);
+  padding:7px 11px;background:linear-gradient(110deg,#64100d,#1c0709);
+  border:1px solid #ff7c40;border-radius:2px;cursor:pointer;
+  box-shadow:inset 0 0 0 1px #260303,0 0 26px #db36165e;
+  transform:rotate(-1.4deg);
+}
+.topbar #chaosSongButton:hover,.topbar #chaosSongButton[aria-expanded="true"]{background:#e84121;transform:rotate(.8deg) scale(1.045);}
+.hero{padding-top:clamp(85px,12svh,145px)!important;min-height:min(83svh,820px)!important;}
+.hero h1{
+  font-size:clamp(80px,12.1vw,186px);
+  letter-spacing:-.07em;line-height:.88;
+  text-shadow:0 6px 2px #250301,2px 14px 18px #070000,0 0 48px #f33b2338;
+  transform:rotate(-.9deg) skew(-2deg);
+}
+.title-echo{letter-spacing:.54em;color:#ffd4c1;transform:rotate(1deg);}
+.decree{background:#220504a8;display:inline-block;transform:rotate(-1.2deg);padding:4px 15px;clip-path:polygon(0 13%,98% 0,100% 94%,3% 100%);}
+.subject-markers{transform:rotate(1.3deg);}
+.clock-shell{
+  max-width:850px;margin:clamp(38px,4vh,52px) auto 0!important;
+  padding:26px clamp(12px,3vw,42px)!important;
+  border:none!important;border-radius:0!important;
+  clip-path:polygon(0 13%,2% 0,89% 2%,100% 0,97% 38%,100% 93%,83% 100%,5% 97%,0 83%,2% 40%);
+  background:linear-gradient(102deg,#030101d4,#1d0309e9 44%,#090102e3 92%)!important;
+  box-shadow:none!important;
+  outline:none;
+  transform:rotate(-1.05deg);
+}
+.clock-shell .digits{font-size:clamp(42px,6.9vw,95px);}
+.clock-shell .clock-title{color:#ff9a70;}
+.impact-stage{z-index:9!important;opacity:.9;}
+.impact-stage .impact-words{filter:drop-shadow(0 3px 8px #000)!important;}
+/* Asymmetric scraps and handwritten visual gags. They're props in the scene, not rectangular cards. */
+.chaos-scene-writing{position:absolute;z-index:16;inset:0;pointer-events:none;font-family:var(--font-kr);}
+.chaos-scrap{
+  position:absolute;display:block;max-width:29vw;
+  font-weight:950;line-height:1.18;letter-spacing:-.065em;
+  color:#fff4e5;text-shadow:2px 3px 2px #240000,0 0 20px #ff2714;
+  filter:drop-shadow(0 7px 3px #000b);
+  transform-origin:center center;
+}
+.chaos-scrap span{display:inline-block;padding:9px 17px;background:linear-gradient(110deg,#330409dc,#8f1308c6 60%,#160302d9);clip-path:polygon(1% 12%,11% 4%,26% 10%,46% 0,67% 4%,91% 0,100% 13%,96% 73%,100% 91%,74% 100%,42% 94%,7% 100%,0 79%);}
+.chaos-scrap--singer{left:3.5%;top:62%;font-size:clamp(18px,2.05vw,35px);transform:rotate(-10deg);}
+.chaos-scrap--boss{right:3%;top:52%;font-size:clamp(19px,2.25vw,39px);transform:rotate(9deg);}
+.chaos-scrap--floor{left:40%;top:77%;font-size:clamp(15px,1.65vw,28px);transform:rotate(-6deg);color:#fda98f;}
+.chaos-scrap--floor span{background:#1b0405b9;clip-path:polygon(0 20%,100% 0,97% 100%,5% 87%);}
+.chaos-scrap--floor::after{content:'● ● ●';font-size:11px;letter-spacing:8px;color:#ff4d1e;display:block;text-align:center;}
+.chaos-scrap--singer::before{content:'';position:absolute;left:8%;top:-18px;width:85px;height:3px;transform:rotate(-13deg);background:#ff4a22;box-shadow:0 0 11px #ff4a22;}
+.chaos-annotation{
+  position:absolute;bottom:clamp(16px,3vh,26px);right:3%;
+  transform:rotate(-2deg);font:800 10px var(--font-mono);
+  letter-spacing:.14em;color:#ffb7a4;background:#2403028e;padding:6px 13px;
+}
+.chaos-media{position:fixed;z-index:999;right:clamp(15px,3vw,50px);bottom:clamp(15px,4vh,45px);width:min(440px,88vw);display:none;transform:rotate(-1.7deg);filter:drop-shadow(0 18px 20px #000);}
+.chaos-media.open{display:block;}
+.chaos-media:before{content:'EXIT ANTHEM // OFFICIAL MV';display:block;background:#ba210a;color:#fff;font:900 13px var(--font-mono);letter-spacing:.08em;padding:9px 13px;clip-path:polygon(0 0,95% 8%,100% 96%,0 100%);}
+.chaos-media iframe{display:block;width:100%;aspect-ratio:16/9;border:4px solid #e63d22;background:#040101;}
+.chaos-media>button{position:absolute;top:1px;right:0;background:#140202;color:#fff;border:0;padding:7px 13px;cursor:pointer;font-weight:900;}
+.chaos-media a{display:block;background:#170504d9;color:#f9cabb;text-decoration:underline;text-align:center;font-size:11px;padding:6px;}
+.chaos-anthem-indicator{position:fixed;z-index:9;bottom:18px;left:22px;pointer-events:none;color:#ff7e4d;transform:rotate(-4deg);font:700 9px var(--font-mono);opacity:.5;}
+@media(max-width:1000px) {
+  .chaos-matte {height:min(100svh,890px);background-position:center top;}
+  .page>.monster-world{opacity:.2!important;}
+  .chaos-scrap--floor{left:37%;top:77%;}
+}
+@media(max-width:710px){
+  .topbar{min-height:62px;}
+  .topbar #chaosSongButton{font-size:10px;padding:6px 7px;}
+  .topbar .top-right{gap:4px;}
+  .topbar #audioLaunch{padding:6px 5px!important;}
+  .topbar #configButton{font-size:9px;padding:6px 5px;}
+  .hero{padding-top:clamp(110px,18svh,172px)!important;min-height:74svh!important;}
+  .hero h1{font-size:clamp(52px,14vw,90px)!important;}
+  .chaos-matte{height:94svh;background-size:auto 100%;background-position:49% 0;}
+  .clock-shell{margin-top:24px!important;padding:17px 10px!important;transform:rotate(-1deg);}
+  .clock-shell .digits{font-size:clamp(30px,10vw,52px)!important;}
+  .chaos-scrap{max-width:50vw;}
+  .chaos-scrap--singer{left:2%;top:62%;font-size:clamp(14px,4.6vw,24px);}
+  .chaos-scrap--boss{right:1%;top:68%;font-size:clamp(13px,4.5vw,22px);transform:rotate(7deg);}
+  .chaos-scrap--floor{left:29%;top:81%;font-size:clamp(11px,3.2vw,16px);}
+  .chaos-annotation{display:none;}
+  .chaos-anthem-indicator{display:none;}
+}
+@media(prefers-reduced-motion:reduce){.chaos-matte,.chaos-scrap{transition:none!important;animation:none!important;}}
