@@ -27,7 +27,7 @@ jobs:
             const p=await b.newPage({viewport:{width:1380,height:780}});
             const errors=[];p.on('pageerror',e=>errors.push(e.message));
             await p.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:45000});
-            await p.waitForFunction(()=>document.querySelector('main.page')?.dataset.build?.includes('V3-CHAOS'),{timeout:50000});
+            await p.waitForFunction(()=>document.querySelector('main.page')?.dataset.build?.includes('V31-MOBILE-CAST'),{timeout:50000});
             await p.waitForTimeout(2300);
             const state=await p.evaluate(()=>({build:document.querySelector('main.page').dataset.build,cards:document.querySelectorAll('.as-file').length,effect:!!window.__kimsdayImpactV7,matte:getComputedStyle(document.querySelector('.chaos-matte')).backgroundImage}));
             if(state.cards||!state.effect||!state.matte.includes('chaos-matte.webp'))throw Error('visual scene missing '+JSON.stringify(state));
@@ -40,18 +40,18 @@ jobs:
             const m=await b.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
             m.on('pageerror',e=>errors.push(e.message));
             await m.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:45000});
-            await m.waitForFunction(()=>document.querySelector('main.page')?.dataset.build?.includes('V3-CHAOS'),{timeout:50000});
+            await m.waitForFunction(()=>document.querySelector('main.page')?.dataset.build?.includes('V31-MOBILE-CAST'),{timeout:50000});
             await m.waitForTimeout(1600);
             const size=await m.evaluate(()=>({screen:innerWidth,scroll:document.documentElement.scrollWidth}));
-            if(size.scroll>size.screen+6)throw Error('overflow '+JSON.stringify(size));
+            if(size.scroll>size.screen+6)throw Error('overflow '+JSON.stringify(size));\n            const photos=await m.locator('.chaos-mobile-cast img').evaluateAll(xs=>xs.map(x=>({ok:x.complete&&x.naturalWidth>0,visible:getComputedStyle(x).display!=='none'})));\n            if(photos.length!==4||photos.some(x=>!x.ok||!x.visible))throw Error('mobile characters missing '+JSON.stringify(photos));
             await m.screenshot({path:'/tmp/aftershock-v3-m.jpg',type:'jpeg',quality:47});
             const main=await b.newPage();
             await main.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:45000});
             const mainBuild=await main.locator('main.page').getAttribute('data-build');
             if(mainBuild.includes('AFTERSHOCK')||errors.length)throw Error('regression '+mainBuild+' '+JSON.stringify(errors));
-            console.log('AFTERSHOCK_V3_QA_PASS '+JSON.stringify({state,size,mainBuild,errors:errors.length}));
+            console.log('AFTERSHOCK_V31_QA_PASS '+JSON.stringify({state,size,mainBuild,errors:errors.length}));
             console.log('DESKTOP_JPEG_BASE64='+fs.readFileSync('/tmp/aftershock-v3-d.jpg').toString('base64'));
             console.log('MOBILE_JPEG_BASE64='+fs.readFileSync('/tmp/aftershock-v3-m.jpg').toString('base64'));
             await b.close();
-          })().catch(e=>{console.error('AFTERSHOCK_V3_QA_FAIL '+(e.stack||e));process.exit(1)});
+          })().catch(e=>{console.error('AFTERSHOCK_V31_QA_FAIL '+(e.stack||e));process.exit(1)});
           NODE
