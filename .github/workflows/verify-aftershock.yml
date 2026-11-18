@@ -1,0 +1,73 @@
+name: Aftershock independent-page QA
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-aftershock.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+      - name: Verify separate page, original main and assets in real browser
+        shell: bash
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          npm install --silent --no-audit --no-fund --prefix "$RUNNER_TEMP/as-check" playwright-core@1.56.1
+          export PWC="$RUNNER_TEMP/as-check/node_modules/playwright-core"
+          node <<'NODE'
+          const {chromium}=require(process.env.PWC);
+          (async()=>{
+           const browser=await chromium.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--autoplay-policy=no-user-gesture-required']});
+           const page=await browser.newPage({viewport:{width:1660,height:920},deviceScaleFactor:1});
+           const errors=[];page.on('pageerror',e=>errors.push(e.message));
+           const orig=await page.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:60000});
+           const originalBuild=await page.locator('main.page').getAttribute('data-build');
+           if(orig.status()!==200||!originalBuild.includes('KIMSDAY-V11-FULL-WORLD-ROBOT'))throw Error('original changed: '+originalBuild);
+           const resp=await page.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:60000});
+           if(resp.status()!==200)throw Error('aftershock HTTP '+resp.status());
+           const build=await page.locator('main.page').getAttribute('data-build');
+           if(!build.includes('AFTERSHOCK'))throw Error('wrong build '+build);
+           if(await page.locator('.as-file').count()!==4)throw Error('dossier count');
+           const img=await page.locator('.as-files img,.aftershock-survivor img').evaluateAll(els=>els.map(x=>({ok:x.complete&&x.naturalWidth>0,src:x.currentSrc})));
+           if(img.some(x=>!x.ok))throw Error('image failed '+JSON.stringify(img));
+           const audio=await page.evaluate(()=>({playing:!document.getElementById('doomAudio').paused,currentTime:document.getElementById('doomAudio').currentTime,src:document.getElementById('doomAudio').currentSrc}));
+           if(!audio.src.includes('judgment-soundtrack-v10.mp3'))throw Error('audio asset lost');
+           await page.waitForTimeout(2900);
+           const secs=await page.locator('#seconds').textContent();
+           if(!/^\d{2}$/.test(secs))throw Error('countdown broken');
+           const impacts=await page.evaluate(()=>!!window.__kimsdayImpactV7);
+           if(!impacts)throw Error('impact engine missing');
+           const dimensions=await page.evaluate(()=>({w:innerWidth,docW:document.documentElement.scrollWidth,docH:document.documentElement.scrollHeight}));
+           if(dimensions.docW>dimensions.w+5)throw Error('desktop overflow '+JSON.stringify(dimensions));
+           await page.screenshot({path:'/tmp/aftershock-desktop.png',fullPage:true});
+           const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+           mobile.on('pageerror',e=>errors.push('mobile: '+e.message));
+           await mobile.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:60000});
+           await mobile.waitForTimeout(1600);
+           const m=await mobile.evaluate(()=>({w:innerWidth,dw:document.documentElement.scrollWidth,cards:document.querySelectorAll('.as-file').length,audioSrc:document.querySelector('#doomAudio').currentSrc}));
+           if(m.dw>m.w+7)throw Error('mobile overflow '+JSON.stringify(m));
+           await mobile.screenshot({path:'/tmp/aftershock-mobile.png',fullPage:true});
+           if(errors.length)throw Error('JS '+JSON.stringify(errors.slice(0,10)));
+           console.log('AFTERSHOCK_BROWSER_VERIFIED=YES',JSON.stringify({originalBuild,build,imgCount:img.length,audio,seconds:secs,impacts,dimensions,mobile:m,errors:errors.length}));
+           await browser.close();
+          })().catch(e=>{console.error('AFTERSHOCK_BROWSER_VERIFIED=FAIL',e.stack||e);process.exit(1)});
+          NODE
+      - name: Upload inspected visual screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aftershock-screen-captures
+          path: |
+            /tmp/aftershock-desktop.png
+            /tmp/aftershock-mobile.png
+          if-no-files-found: ignore
