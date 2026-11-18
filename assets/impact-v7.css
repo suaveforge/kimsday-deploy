@@ -1,0 +1,33 @@
+/* V7 - real-time procedural impacts. No pre-rendered explosion photo. */
+.impact-stage::after {content:none!important;display:none!important;background:none!important;animation:none!important;}
+.impact-stage::before {background:linear-gradient(0deg,rgba(12,2,2,.34),transparent 70%);}
+.impact-crater,.impact-pillar,.impact-cloud,.impact-afterglow,.impact-shock{display:none!important;}
+.impact-omen{opacity:1!important;filter:none!important;z-index:2;}
+.impact-center{z-index:3;}
+#siegeCanvas{z-index:9;}
+.impact-words {opacity:0;transform:rotate(var(--turn)) translateY(8px);filter:none!important;animation:none!important;bottom:52%;left:-8%;right:-8%;color:#ffddb2;mix-blend-mode:screen;font-family:'Nanum Brush Script','Nanum Myeongjo','Noto Sans KR',serif;font-style:italic;font-weight:700;letter-spacing:-.055em;line-height:1.02;text-shadow:0 0 3px #fff6e3,0 0 10px #ff7727,0 0 22px #ff3d08,0 0 45px #dc1b0c,2px 3px 2px #090000;transition:opacity 250ms ease;}
+.impact-words .impact-line{display:block;white-space:nowrap;}
+.impact-words .death-glyph{display:inline-block;white-space:pre;opacity:0;will-change:opacity,transform,filter;}
+.impact-omen.revealed .impact-words{opacity:1;}
+.impact-omen.revealed .death-glyph{animation:death-glyph-forge 1080ms cubic-bezier(.19,.76,.21,1) both;animation-delay:var(--glyph-delay);}
+.impact-omen.cooling .impact-words{opacity:.3;transition:opacity 2.2s ease;}
+.impact-omen.cooling .death-glyph{filter:grayscale(.6) brightness(.58);}
+.impact-omen.detonating .impact-words {animation:none!important;}
+.impact-omen.detonating .death-glyph {animation:death-glyph-forge 1080ms cubic-bezier(.19,.76,.21,1) both!important;animation-delay:var(--glyph-delay)!important;}
+@keyframes death-glyph-forge{
+ 0%{opacity:0;transform:translate(var(--burst-x),var(--burst-y)) rotate(var(--burst-r)) scale(.25);filter:blur(10px) brightness(4)}
+ 27%{opacity:.9;transform:translate(calc(var(--burst-x)*.32),calc(var(--burst-y)*.30)) rotate(calc(var(--burst-r)*.25)) scale(1.33);filter:blur(2px) brightness(3.1)}
+ 54%{opacity:1;transform:translate(0,-8px) rotate(0) scale(1.04);filter:blur(0) brightness(2.2)}
+ 100%{opacity:1;transform:translate(0,0) rotate(0) scale(1);filter:blur(0) brightness(1)}
+}
+/* The letters are event-timed and never a permanently visible wallpaper. */
+@media(max-width:850px){.impact-words{bottom:54%;left:-13%;right:-13%;font-size:clamp(18px,4.6vw,30px);}}
+@media(max-width:480px){.impact-words{bottom:56%;left:-18%;right:-18%;font-size:clamp(16px,4.7vw,22px);}}
+@media(max-height:650px){.impact-words{bottom:48%;}}
+@media(prefers-reduced-motion:reduce){.impact-omen.revealed .death-glyph{animation:none!important;opacity:1;transform:none}.impact-words{transition:none}}
+
+@media(max-width:480px){
+ .impact-omen{width:62%;}
+ .impact-left{left:25%;}.impact-center{left:50%;}.impact-right{left:75%;}
+ .impact-words{left:-1%;right:-1%;bottom:55%;font-size:clamp(15px,4.2vw,19px);}
+}
