@@ -552,10 +552,19 @@ body.stage-8 .page{animation:none!important;}
 @media(max-width:710px){.topbar .transmission{display:none!important}.topbar .top-right{gap:5px}.topbar #audioLaunch{padding:6px 8px!important;font-size:10px}.topbar .top-action{padding:7px 8px}.ruins-matte{background-size:auto 100%;background-position:50% bottom;opacity:.82}}
 @media(max-width:355px){.topbar #audioLaunch .audio-text{font-size:0}.topbar #audioLaunch .audio-mark{font-size:16px}.topbar #audioLaunch{padding:6px 9px!important}}
 @media(prefers-reduced-motion:reduce){.ruins-matte{transition:none!important}}
+
+/* V11: uninterrupted full-screen cinematic matte, static for battery life. */
+.page>.ruins-matte{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:100svh!important;background-image:linear-gradient(180deg,rgba(8,0,3,.12) 0%,rgba(9,0,3,.15) 39%,rgba(7,0,3,.03) 66%,rgba(3,0,1,.07) 100%),url('assets/ruins-v11.webp')!important;background-size:100% 100%,cover!important;background-position:center center!important;background-repeat:no-repeat!important;opacity:clamp(.76,calc(.80 + var(--world-p)*.15),.97)!important;filter:none!important;transform:none!important;animation:none!important;pointer-events:none!important;z-index:1!important;}
+.page>.doom-art{opacity:.22!important;mix-blend-mode:screen!important;}
+.page>.sky{opacity:.16!important;}
+.page>.world-bloodwash{opacity:calc(.05 + var(--world-p)*.24)!important;}
+.page>.world-inferno{opacity:calc(.08 + var(--world-p)*.32)!important;}
+.page>.impact-stage:before{opacity:.4!important;}
+@media(max-width:700px){.page>.ruins-matte{background-size:auto 100%,auto 100%!important;background-position:center center!important;opacity:.94!important;}}
 </style>
 </head>
 <body>
- <main class="page" data-build="KIMSDAY-V10-CINEMATIC-AUTOSOUND-20261118">
+ <main class="page" data-build="KIMSDAY-V11-FULL-WORLD-ROBOT-20261118">
   <div class="doom-art" aria-hidden="true"></div><div class="ruins-matte" aria-hidden="true"></div>
   
   <div class="world-bloodwash" aria-hidden="true"></div><div class="world-inferno" aria-hidden="true"></div>
@@ -623,7 +632,7 @@ body.stage-8 .page{animation:none!important;}
       <div class="impact-cloud cloud-high" aria-hidden="true"></div>
       <div class="impact-afterglow" aria-hidden="true"></div>
       <div class="impact-shock" aria-hidden="true"></div>
-      <div class="impact-words"><span>지원서는</span><span>발사되었다</span></div>
+      <div class="impact-words"><span>탈출 신호가</span><span>포착됐다</span></div>
     </div>
     <div class="impact-omen impact-right" data-omen="2">
       <div class="impact-crater" aria-hidden="true"></div>
@@ -632,7 +641,7 @@ body.stage-8 .page{animation:none!important;}
       <div class="impact-cloud cloud-high" aria-hidden="true"></div>
       <div class="impact-afterglow" aria-hidden="true"></div>
       <div class="impact-shock" aria-hidden="true"></div>
-      <div class="impact-words"><span>마지막 방아쇠는</span><span>누구의 손에</span></div>
+      <div class="impact-words"><span>스스로 떠날 것인가</span><span>쫓겨날 것인가</span></div>
     </div>
     <div class="impact-disclaimer">비공식 풍자 연출 · 실제 퇴사·해고 여부 및 시각 미확정</div>
   </div>
@@ -889,6 +898,7 @@ body.stage-8 .page{animation:none!important;}
         this.active=true;this.pending=false;
         soundLaunch.removeAttribute('data-audio-pending');
         stopFallback();this.rebalance();setAudioUI(true,'시네마틱 종말 사운드 재생 중');
+        armRobot();if(!robotLast)window.setTimeout(()=>{if(sound.active)robotResignation();},7300);
       }catch(err){
         if(ticket!==this.attemptId)return;
         this.active=false;
@@ -907,9 +917,47 @@ body.stage-8 .page{animation:none!important;}
       ++this.attemptId;
       rememberMute(true);this.active=false;this.pending=false;
       this.audio.pause();stopFallback();soundLaunch.removeAttribute('data-audio-pending');
+      try{window.speechSynthesis?.cancel()}catch(_){}
       setAudioUI(false,'음소거: 다시 클릭하면 재생');
     }
   };
+
+  /* Original robotic resignation vignette, not a reproduction of a commercial song. */
+  let robotLast=0,robotSchedule=0;
+  function robotChime(){
+    try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+      const c=window.__kimRobotAudio||(window.__kimRobotAudio=new C());
+      if(c.state==='suspended')void c.resume();
+      const t=c.currentTime;
+      [415,349,294,220,185].forEach((hz,i)=>{
+        const o=c.createOscillator(),g=c.createGain();
+        o.type='square';o.frequency.setValueAtTime(hz,t+.10*i);
+        g.gain.setValueAtTime(.0001,t+.10*i);g.gain.linearRampToValueAtTime(.023,t+.10*i+.015);
+        g.gain.exponentialRampToValueAtTime(.0001,t+.10*i+.21);
+        o.connect(g).connect(c.destination);o.start(t+.10*i);o.stop(t+.10*i+.23);
+      });
+    }catch(e){}
+  }
+  function robotResignation(){
+    if(!sound.active||document.hidden||manuallyMuted||Date.now()-robotLast<30000)return false;
+    robotLast=Date.now();robotChime();
+    try{
+      if(!('speechSynthesis' in window))return false;
+      const tts=window.speechSynthesis,voices=tts.getVoices();
+      const ko=voices.find(v=>v.lang==='ko-KR')||voices.find(v=>v.lang&&v.lang.startsWith('ko'));
+      if(!ko)return false;
+      if(tts.speaking)tts.cancel();
+      const u=new SpeechSynthesisUtterance('퇴사할게요! ... 아, 진짜로! 퇴사할게요!');
+      u.lang='ko-KR';u.voice=ko;u.rate=.87;u.pitch=1.74;u.volume=.95;
+      tts.speak(u);return true;
+    }catch(e){return false;}
+  }
+  function armRobot(){
+    if(robotSchedule)return;
+    robotSchedule=window.setInterval(()=>{
+      if(sound.active&&!manuallyMuted&&!document.hidden&&Date.now()-robotLast>47000)robotResignation();
+    },39000);
+  }
   function audioToggle(e){if(e)e.stopPropagation();if(sound.active)sound.stop();else void sound.start({gesture:true});}
   soundLaunch.addEventListener('click',audioToggle);
   soundButton.addEventListener('click',audioToggle);
