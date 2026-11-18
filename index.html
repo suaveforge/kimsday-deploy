@@ -489,7 +489,7 @@ body { overflow:hidden; }
 
 
 /* PHOTOREALISTIC THREE-IMPACT MATTE PAINTING: composited behind living smoke and words. */
-.impact-stage::after {content:'';position:absolute;z-index:0;inset:-49% -2.4% -12%;pointer-events:none;background:url("assets/kimsday-barrage.webp") center bottom / 100% 100% no-repeat;opacity:calc(.78 + .21*var(--world-p));filter:brightness(calc(.80 + .39*var(--world-p))) saturate(calc(1.03 + .65*var(--world-p)));transform-origin:50% 92%;transform:scale(calc(1 + .19*var(--world-p))) translateY(calc(10px - 30px*var(--world-p)));animation:explosion-breath 7s ease-in-out infinite alternate;}
+.impact-stage::after {content:'';position:absolute;z-index:0;inset:-49% -2.4% -12%;pointer-events:none;background:none center bottom / 100% 100% no-repeat;opacity:calc(.78 + .21*var(--world-p));filter:brightness(calc(.80 + .39*var(--world-p))) saturate(calc(1.03 + .65*var(--world-p)));transform-origin:50% 92%;transform:scale(calc(1 + .19*var(--world-p))) translateY(calc(10px - 30px*var(--world-p)));animation:explosion-breath 7s ease-in-out infinite alternate;}
 .impact-omen{z-index:2;}
 .impact-center{z-index:3;}
 .impact-cloud{opacity:.38!important;mix-blend-mode:multiply;}
@@ -526,9 +526,10 @@ body { overflow:hidden; }
  .impact-right .impact-words span:first-child{font-size:.77em}
 }
 </style>
+<link rel="stylesheet" href="assets/impact-v7.css">
 </head>
 <body>
- <main class="page" data-build="KIMSDAY-V6-CINEMA-IMPACT-20261118">
+ <main class="page" data-build="KIMSDAY-V7-LIVE-EXPLOSION-20261118">
   <div class="doom-art" aria-hidden="true"></div>
   
   <div class="world-bloodwash" aria-hidden="true"></div><div class="world-inferno" aria-hidden="true"></div>
@@ -950,7 +951,7 @@ body { overflow:hidden; }
   }
   // Artillery: ballistic shells, burning impacts, expanding shockwaves, debris. Rate, glow and travel change continuously by date.
   const siege=$('siegeCanvas'),siegeCtx=siege.getContext&&siege.getContext('2d');
-  if(siegeCtx&&!matchMedia('(prefers-reduced-motion:reduce)').matches){
+  if(false && siegeCtx&&!matchMedia('(prefers-reduced-motion:reduce)').matches){
     let w=0,h=0,shots=[],impacts=[],debris=[],lastShot=0,lastTime=0;
     const rand=(a,b)=>a+Math.random()*(b-a);
     function resizeSiege(){const d=Math.min(devicePixelRatio||1,1.5);w=innerWidth;h=Math.max(document.querySelector('.page').offsetHeight,innerHeight);siege.width=w*d;siege.height=h*d;siegeCtx.setTransform(d,0,0,d,0,0);}
@@ -969,5 +970,6 @@ body { overflow:hidden; }
   updateClock();setInterval(updateClock,200);
  })();
  </script>
+<script defer src="assets/impact-v7.js"></script>
 </body>
 </html>
