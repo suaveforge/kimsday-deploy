@@ -209,3 +209,10 @@
   .page > .chaos-mobile-cast > .chaos-poster-crop--toast { display:none!important; }
   .page > .chaos-mobile-cast > img.chaos-mobile-toast { display:none!important; }
 }
+
+/* Additional portrait was separately overlaid on desktop as well.
+   The original source assets stay untouched; suppress its display on every viewport. */
+.page > .chaos-mobile-cast > img.chaos-mobile-toast,
+.page > .chaos-mobile-cast > .chaos-poster-crop--toast {
+  display:none!important;
+}
