@@ -655,6 +655,7 @@ body.stage-8 .page{animation:none!important;}
 .page>.impact-stage:before{opacity:.4!important;}
 @media(max-width:700px){.page>.ruins-matte{background-size:auto 100%,auto 100%!important;background-position:center center!important;opacity:.94!important;}}
 </style>
+<link rel="stylesheet" href="assets/chaos-v3.css?v=3">
 </head>
 <body>
  <main class="page" data-build="KIMSDAY-AFTERSHOCK-V3-CHAOS-SCENE-20261118">
@@ -663,6 +664,7 @@ body.stage-8 .page{animation:none!important;}
     <div class="aftershock-redline"></div><div class="as-burn-scar"></div>
     <div class="as-stamp">EXIT PROTOCOL / 1.5베</div>
   </div>
+  <div class="chaos-scene-writing" aria-hidden="true"><div class="chaos-scrap chaos-scrap--singer"><span>퇴사송 리허설 중?<br>종말은 LIVE</span></div><div class="chaos-scrap chaos-scrap--boss"><span>아직도 출근 중<br>이게 더 공포다</span></div><div class="chaos-scrap chaos-scrap--floor"><span>탈출 버튼은<br>점검 중...</span></div><div class="chaos-annotation">UNOFFICIAL PARODY · KIM’S DAY AFTERSHOCK</div></div>
   <div class="world-bloodwash" aria-hidden="true"></div><div class="world-inferno" aria-hidden="true"></div>
   <div class="monster-world" aria-hidden="true">
     <div class="underworld-moon"></div>
@@ -749,7 +751,7 @@ body.stage-8 .page{animation:none!important;}
     </a>
     <div class="top-right">
       <span class="transmission"><span class="live-dot"></span> <span id="transmissionText">PROPHECY ACTIVE</span></span><button type="button" id="demoFlag" class="demo-flag" hidden title="실제 시간으로 복귀">SIMULATION ↺</button>
-      <button type="button" id="audioLaunch" class="audio-launch" aria-pressed="false" aria-label="사운드 켜기 또는 끄기"><span class="audio-mark" aria-hidden="true">🔊</span><span class="audio-text">사운드 켜기</span></button>
+      <button type="button" id="audioLaunch" class="audio-launch" aria-pressed="false" aria-label="사운드 켜기 또는 끄기"><span class="audio-mark" aria-hidden="true">🔊</span><span class="audio-text">사운드 켜기</span></button><button type="button" id="chaosSongButton" aria-expanded="false" title="소연 퇴사할게여 공식 뮤직비디오 재생">▶ 퇴사할게여 · 원곡</button>
       <a class="as-original-link" href="/">기존 페이지</a><button type="button" class="top-action" id="configButton" aria-label="예상 종말 일시 수정">D-DAY 설정 ↗</button>
     </div>
    </header>
@@ -795,7 +797,7 @@ body.stage-8 .page{animation:none!important;}
   <button id="soundButton" class="sound-toggle" aria-pressed="false" title="종말 사운드 켜기/끄기">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path id="soundWave" d="M16 9a4 4 0 010 6M19 6a8 8 0 010 12"/></svg><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="sound-text">SOUND / ACTIVATE</span>
   </button>
- </main>
+ <div class="chaos-media" id="chaosMusic" aria-hidden="true" inert><button type="button" id="chaosMusicClose" aria-label="음악 플레이어 닫기">✕</button><iframe id="chaosMusicFrame" title="소연 (SOYEON) 퇴사할게여 공식 뮤직비디오" loading="lazy" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><a href="https://www.youtube.com/watch?v=7mDDM0eBWR0" target="_blank" rel="noopener noreferrer">재생이 막히면 공식 YouTube에서 열기</a></div></main>
  <dialog id="settings" aria-labelledby="settingsTitle">
   <div class="dialog-head"><h2 id="settingsTitle">THE ZERO HOUR</h2><button type="button" class="dialog-close" id="closeSettings" aria-label="닫기">×</button></div>
   <label for="targetInput" class="dialog-label">예상 종말 일시 / KOREA STANDARD TIME</label>
@@ -1178,5 +1180,6 @@ body.stage-8 .page{animation:none!important;}
  })();
  </script>
 <script defer src="../assets/impact-v7.js?v=9"></script>
+<script defer src="assets/chaos-v3.js?v=3"></script>
 </body>
 </html>
