@@ -1,0 +1,57 @@
+name: Verify AFTERSHOCK V3 chaos
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-aftershock-v3.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with: {chrome-version: stable}
+      - name: Verify desktop, mobile, song controls and untouched main
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/aftershock-v3" playwright-core@1.56.1 --silent --no-audit --no-fund
+          export PL="$RUNNER_TEMP/aftershock-v3/node_modules/playwright-core"
+          node <<'NODE'
+          const {chromium}=require(process.env.PL),fs=require('fs');
+          (async()=>{
+            const b=await chromium.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const p=await b.newPage({viewport:{width:1380,height:780}});
+            const errors=[];p.on('pageerror',e=>errors.push(e.message));
+            await p.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:45000});
+            await p.waitForFunction(()=>document.querySelector('main.page')?.dataset.build?.includes('V3-CHAOS'),{timeout:50000});
+            await p.waitForTimeout(2300);
+            const state=await p.evaluate(()=>({build:document.querySelector('main.page').dataset.build,cards:document.querySelectorAll('.as-file').length,effect:!!window.__kimsdayImpactV7,matte:getComputedStyle(document.querySelector('.chaos-matte')).backgroundImage}));
+            if(state.cards||!state.effect||!state.matte.includes('chaos-matte.webp'))throw Error('visual scene missing '+JSON.stringify(state));
+            await p.screenshot({path:'/tmp/aftershock-v3-d.jpg',type:'jpeg',quality:51});
+            await p.locator('#chaosSongButton').click();
+            const v=await p.locator('#chaosMusicFrame').getAttribute('src');
+            if(!v.includes('youtube-nocookie.com/embed/7mDDM0eBWR0'))throw Error('song player '+v);
+            await p.locator('#chaosMusicClose').click();
+            if(await p.locator('#chaosMusicFrame').getAttribute('src')!=='about:blank')throw Error('song did not stop');
+            const m=await b.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+            m.on('pageerror',e=>errors.push(e.message));
+            await m.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:45000});
+            await m.waitForFunction(()=>document.querySelector('main.page')?.dataset.build?.includes('V3-CHAOS'),{timeout:50000});
+            await m.waitForTimeout(1600);
+            const size=await m.evaluate(()=>({screen:innerWidth,scroll:document.documentElement.scrollWidth}));
+            if(size.scroll>size.screen+6)throw Error('overflow '+JSON.stringify(size));
+            await m.screenshot({path:'/tmp/aftershock-v3-m.jpg',type:'jpeg',quality:47});
+            const main=await b.newPage();
+            await main.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:45000});
+            const mainBuild=await main.locator('main.page').getAttribute('data-build');
+            if(mainBuild.includes('AFTERSHOCK')||errors.length)throw Error('regression '+mainBuild+' '+JSON.stringify(errors));
+            console.log('AFTERSHOCK_V3_QA_PASS '+JSON.stringify({state,size,mainBuild,errors:errors.length}));
+            console.log('DESKTOP_JPEG_BASE64='+fs.readFileSync('/tmp/aftershock-v3-d.jpg').toString('base64'));
+            console.log('MOBILE_JPEG_BASE64='+fs.readFileSync('/tmp/aftershock-v3-m.jpg').toString('base64'));
+            await b.close();
+          })().catch(e=>{console.error('AFTERSHOCK_V3_QA_FAIL '+(e.stack||e));process.exit(1)});
+          NODE
