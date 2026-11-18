@@ -1,4 +1,4 @@
-name: Verify KIMSDAY V11 visual and slogan deployment
+name: Verify KIMSDAY V11 full-height backdrop and phrases
 on:
   push:
     branches: [main]
