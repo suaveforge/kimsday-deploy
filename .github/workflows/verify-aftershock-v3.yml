@@ -43,7 +43,9 @@ jobs:
             await m.waitForFunction(()=>document.querySelector('main.page')?.dataset.build?.includes('V31-MOBILE-CAST'),{timeout:50000});
             await m.waitForTimeout(1600);
             const size=await m.evaluate(()=>({screen:innerWidth,scroll:document.documentElement.scrollWidth}));
-            if(size.scroll>size.screen+6)throw Error('overflow '+JSON.stringify(size));\n            const photos=await m.locator('.chaos-mobile-cast img').evaluateAll(xs=>xs.map(x=>({ok:x.complete&&x.naturalWidth>0,visible:getComputedStyle(x).display!=='none'})));\n            if(photos.length!==4||photos.some(x=>!x.ok||!x.visible))throw Error('mobile characters missing '+JSON.stringify(photos));
+            if(size.scroll>size.screen+6)throw Error('overflow '+JSON.stringify(size));
+            const photos=await m.locator('.chaos-mobile-cast img').evaluateAll(xs=>xs.map(x=>({ok:x.complete&&x.naturalWidth>0,visible:getComputedStyle(x).display!=='none'})));
+            if(photos.length!==4||photos.some(x=>!x.ok||!x.visible))throw Error('mobile characters missing '+JSON.stringify(photos));
             await m.screenshot({path:'/tmp/aftershock-v3-m.jpg',type:'jpeg',quality:47});
             const main=await b.newPage();
             await main.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:45000});
