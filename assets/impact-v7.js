@@ -1,4 +1,4 @@
-/* KIM'S DAY V7 -- procedurally animated artillery impact + smoke + debris + forged dying messages. */
+/* KIM'S DAY V8 -- wandering artillery, true fade-out and evolving ruined skyline. */
 (() => {
   'use strict';
   const canvas=document.getElementById('siegeCanvas');
@@ -12,7 +12,7 @@
   const mobile=()=>innerWidth<670;
   let W=0,H=0,dpr=1,stageBottom=0,stageHeight=0,elapsed=0,prev=0,frame=0;
   let shots=[],bursts=[],smokes=[],fireflies=[],rubble=[];
-  let nextShots=[.16,.82,1.48],events=0,onscreen=true;let startTime=0,lastPaint=0;
+  let nextShots=[.16,.82,1.48],nextAmbient=.53,lastAmbientX=-9999,ambientHits=0,events=0,onscreen=true;let startTime=0,lastPaint=0;
   const focus=[.18,.50,.82];
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const sprite=(kind,seed)=>{
@@ -37,7 +37,9 @@
     return cv;
   };
   const textures={smoke:[sprite('smoke',1),sprite('smoke',2),sprite('smoke',3)],ash:[sprite('ash',1),sprite('ash',2)],flame:[sprite('flame',1),sprite('flame',2)]};
-  const siteState=sites.map((node,i)=>({node,i,lastHit:-99,lastFire:-99,firstHit:false}));
+  const siteState=sites.map((node,i)=>({node,i,lastHit:-99,lastFire:-99,firstHit:false,anchor:focus[i],lift:0}));
+  const ruins=Array.from({length:45},(_,i)=>({u:i/44,w:rand(.011,.032),h:rand(.12,.52),broken:rand(.1,.95),seed:rand(0,6.28)}));
+  const braziers=Array.from({length:18},(_,i)=>({u:(i+.45)/18,y:rand(.015,.23),sz:rand(.6,1.48),seed:rand(0,6.28)}));
   // Each syllable comes from airborne debris and burns into the smoke only after impact.
   sites.forEach((node,i)=>{
     const root=node.querySelector('.impact-words');
@@ -64,49 +66,70 @@
     canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
     const box=stage.getBoundingClientRect();stageBottom=box.bottom+scrollY;stageHeight=box.height;
   }
-  function point(i){return {x:W*focus[i],y:Math.min(H-16,stageBottom-stageHeight*.075)};}
+  function point(i){const st=siteState[i];return {x:W*st.anchor,y:Math.min(H-16,stageBottom-stageHeight*(.075+st.lift))};}
   function heat(){const value=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--world-p'));return Number.isFinite(value)?clamp(value,0,1):0;}
+  function projectile(slot,x,y,power){
+    const life=clamp(.95+rand(0,.55)-heat()*.12,.81,1.52),startX=clamp(x+rand(-W*.46,W*.46),-90,W+90);
+    shots.push({slot,x0:startX,y0:-95-rand(0,H*.13),cx:rand(Math.min(startX,x),Math.max(startX,x)),cy:y*rand(.23,.44),x1:x,y1:y,p:0,duration:life,trail:[],power});
+    if(shots.length>13)shots.shift();
+  }
   function launch(slot){
-    const p=point(slot),scale=mobile()?.72:1;const life=clamp(1.1+(1-heat())*.25,1.05,1.4);
-    const startX=clamp(p.x+rand(-W*.36,W*.36),-50,W+50);
-    shots.push({slot,x0:startX,y0:-80-rand(0,100),cx:rand(Math.min(startX,p.x),Math.max(startX,p.x)),cy:p.y*.33,x1:p.x,y1:p.y,p:0,duration:life,trail:[],power:(slot===1?1.34:1.03)*scale*(1+heat()*.7)});
-    if(shots.length>7)shots.shift();siteState[slot].lastFire=elapsed;
+    const st=siteState[slot], narrow=mobile();
+    st.anchor=rand(narrow?.30:.18,narrow?.70:.82);
+    st.lift=rand(0,narrow?.085:.16);
+    st.node.style.left=(st.anchor*100).toFixed(2)+'%';
+    st.node.style.bottom=(st.lift*100).toFixed(2)+'%';
+    st.node.classList.remove('revealed','cooling','detonating','vanishing');
+    const p=point(slot),power=(slot===1?1.22:1.02)*(narrow?.68:1)*(1+heat()*.65);
+    projectile(slot,p.x,p.y,power);st.lastFire=elapsed;
+  }
+  function launchAmbient(){
+    const p=heat(),narrow=mobile();
+    let x=0;for(let k=0;k<9;k++){x=W*rand(.045,.955);if(Math.abs(x-lastAmbientX)>W*(narrow?.22:.16))break;}
+    lastAmbientX=x;
+    const y=stageBottom-stageHeight*rand(.06,.66);
+    projectile(-1,x,Math.min(H-18,y),rand(.36,.68)*(1+p*.72)*(narrow?.79:1));
   }
   function impact(s){
-    const {x,y}=point(s.slot),power=s.power,now=elapsed;
+    const x=s.x1,y=s.y1,power=s.power,now=elapsed,ambient=s.slot<0;
+    if(ambient)ambientHits++;
     bursts.push({x,y,age:0,life:5.4,power,slot:s.slot,noise:rand(0,TAU)});
-    const n=mobile()?34:58;
+    const n=ambient?(mobile()?14:23):(mobile()?34:58);
     for(let i=0;i<n;i++){
       const ang=rand(0,TAU),offset=rand(2,26)*power;
       const speed=rand(10,48)*power;
       smokes.push({x:x+Math.cos(ang)*offset,y:y+Math.sin(ang)*offset*.19,vx:Math.cos(ang)*speed*(.9+heat()*.4),vy:-rand(35,106)*power,age:-rand(.02,.62),life:rand(3.3,5.9),radius:rand(17,47)*power,expand:rand(12,26),kind:i%5===0?'ash':'smoke',texture:i%3,spin:rand(-.8,.8)});
     }
     // Distinct expanding mushroom head, spawned with delay as the core rises.
-    for(let i=0;i<(mobile()?18:33);i++){
+    for(let i=0;i<(ambient?(mobile()?7:14):(mobile()?18:33));i++){
       const a=rand(0,TAU),r=rand(2,95)*power;
       smokes.push({x:x+Math.cos(a)*r,y:y-rand(75,115)*power+Math.sin(a)*r*.27,vx:Math.cos(a)*rand(8,35),vy:-rand(15,49)*power,age:-rand(.28,.9),life:rand(3.9,6.3),radius:rand(24,64)*power,expand:rand(16,34),kind:i%7===0?'ash':'smoke',texture:i%3,spin:rand(-.45,.45)});
     }
-    for(let i=0;i<(mobile()?46:75);i++){
+    for(let i=0;i<(ambient?(mobile()?14:23):(mobile()?46:75));i++){
       const a=rand(0,TAU),speed=rand(90,315)*power;
       fireflies.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-rand(0,140),age:0,life:rand(.55,1.55),size:rand(1.2,4.4),trail:[]});
     }
-    for(let i=0;i<(mobile()?15:26);i++){
+    for(let i=0;i<(ambient?(mobile()?6:10):(mobile()?15:26));i++){
       rubble.push({x,y,vx:rand(-210,210)*power,vy:-rand(130,320)*power,age:0,life:rand(.8,2.4),size:rand(2,9),angle:rand(-PI,PI),av:rand(-6,6)});
     }
-    if(smokes.length>410)smokes.splice(0,smokes.length-410);
+    if(smokes.length>460)smokes.splice(0,smokes.length-460);
     if(fireflies.length>300)fireflies.splice(0,fireflies.length-300);
     if(rubble.length>150)rubble.splice(0,rubble.length-150);
-    const state=siteState[s.slot],el=state.node;
-    state.lastHit=now;state.firstHit=true;events++;
-    if(mobile())sites.forEach((other,idx)=>{if(idx!==s.slot){other.classList.remove('revealed','detonating','cooling')}});
-    el.classList.remove('revealed','cooling','detonating');
-    // The flash is visible first; the surviving words appear inside its smoke 180 ms later.
-    setTimeout(()=>{el.classList.add('revealed','detonating');},185);
-    setTimeout(()=>{el.classList.remove('detonating');},1650);
-    setTimeout(()=>{if(state.lastHit===now)el.classList.add('cooling');},5900);
+    if(!ambient){
+      const state=siteState[s.slot],el=state.node;
+      state.lastHit=now;state.firstHit=true;events++;
+      if(mobile())sites.forEach((other,idx)=>{if(idx!==s.slot){other.classList.remove('revealed','detonating','cooling','vanishing')}});
+      el.classList.remove('revealed','cooling','detonating','vanishing');
+      // First flash; then individual glyphs travel out of the impact rubble.
+      setTimeout(()=>{if(state.lastHit===now)el.classList.add('revealed','detonating');},200);
+      setTimeout(()=>{if(state.lastHit===now)el.classList.remove('detonating');},1730);
+      // Hold briefly, then dissolve into smoke and leave absolutely no permanent label.
+      setTimeout(()=>{if(state.lastHit===now)el.classList.add('cooling','vanishing');},3350);
+      setTimeout(()=>{if(state.lastHit===now)el.classList.remove('revealed','cooling','detonating','vanishing');},5650);
+    }
     // If sound has been unlocked, play a short noise-burst explosion in sync with the visual impact.
     try{
-      if(document.getElementById('audioLaunch')?.getAttribute('aria-pressed')==='true'){
+      if((!ambient || Math.random()<.23) && document.getElementById('audioLaunch')?.getAttribute('aria-pressed')==='true'){
         const C=window.AudioContext||window.webkitAudioContext;
         if(C){window.__doomBlastAudio=window.__doomBlastAudio||new C();const ac=window.__doomBlastAudio;
           if(ac.state==='suspended')void ac.resume();
@@ -206,22 +229,67 @@
       if(p>=1){shots.splice(i,1);impact(s);}
     }
   }
+  // Continuous environmental storytelling independent of meteor impacts.
+  // Ruined towers, crawling molten fire, smoke fronts and ash all worsen with time.
+  function environment(p){
+    const baseline=stageBottom-stageHeight*.10,top=stageBottom-stageHeight*.94;
+    const t=elapsed;ctx.save();
+    let haze=ctx.createLinearGradient(0,top,0,stageBottom);
+    haze.addColorStop(0,'rgba(255,55,16,0)');
+    haze.addColorStop(.52,'rgba(126,29,16,'+(.065+p*.15)+')');
+    haze.addColorStop(1,'rgba(255,74,16,'+(.16+p*.26)+')');
+    ctx.fillStyle=haze;ctx.fillRect(0,top,W,stageHeight*1.08);
+    // Thundercloud banks drift horizontally, visibly independent of the fixed backdrop.
+    for(let i=0;i<9;i++){
+      const bankX=((i/8+Math.sin(t*.05+i)*.04)%1)*W;
+      const bankY=top+stageHeight*(.09+(i%3)*.14);
+      const rr=W*(.14+.07*Math.sin(i*4.1)**2);
+      ctx.globalAlpha=(.22+p*.24)*(.78+.22*Math.sin(t*.12+i));
+      ctx.drawImage(textures.smoke[i%3],bankX-rr,bankY-rr*.55,rr*2,rr*1.1);
+    }
+    // Destroyed skyline, different silhouettes rather than a flat black background.
+    ctx.globalAlpha=1;
+    for(let i=0;i<ruins.length;i++){
+      const b=ruins[i],x=b.u*W,w=Math.max(7,b.w*W),h=stageHeight*b.h*(.9+p*.36);
+      ctx.fillStyle='rgba(7,3,5,'+(.66+p*.22)+')';
+      ctx.fillRect(x-w*.5,baseline-h,w,h+stageHeight*.28);
+      if(i%4===0){ctx.fillStyle='rgba(10,3,5,.94)';
+        ctx.beginPath();ctx.moveTo(x-w*.5,baseline-h);ctx.lineTo(x-w*.28,baseline-h-15);ctx.lineTo(x+w*.08,baseline-h+4);ctx.lineTo(x+w*.5,baseline-h-7);ctx.lineTo(x+w*.5,baseline);ctx.lineTo(x-w*.5,baseline);ctx.fill();}
+      if(i%3===0){const flick=.35+.35*(.5+.5*Math.sin(t*2.7+b.seed));
+        ctx.fillStyle='rgba(255,91,24,'+(flick*(.47+p*.45))+')';
+        ctx.fillRect(x-w*.22,baseline-h*.57,Math.max(2,w*.17),Math.max(3,h*.06));}
+    }
+    // Real animated fires at different skyline positions, their height and intensity grow with the deadline.
+    ctx.globalCompositeOperation='screen';
+    for(let i=0;i<braziers.length;i++){
+      const f=braziers[i],x=f.u*W,root=baseline+stageHeight*f.y;
+      const dance=Math.sin(t*3.2+f.seed)+.6*Math.sin(t*6.7+f.seed*3);
+      const r=(20+stageHeight*.055)*f.sz*(1+p*.95);
+      ctx.globalAlpha=(.46+p*.38)*(.74+.12*dance);
+      ctx.drawImage(textures.flame[i%2],x-r,root-r*(1.95+.18*dance),r*2,r*(2.5+.33*dance));
+      ctx.globalAlpha=(.18+p*.28);
+      ctx.drawImage(textures.ash[i%2],x-r*1.45,root-r*3.0-t*3%33,r*2.9,r*2.7);
+    }
+    ctx.restore();
+  }
   function render(time){
     requestAnimationFrame(render);
     if(!onscreen)return;
     if(!prev){prev=time;startTime=startTime||time;return;}const dt=clamp((time-prev)/1000,0,.19);prev=time;elapsed=(time-startTime)/1000;frame++;
     const every=mobile()?2:1;if(frame%every!==0)return;
     const p=heat();
+    if(elapsed>nextAmbient){launchAmbient();nextAmbient=elapsed+rand(Math.max(.70,2.8-p*1.75),Math.max(1.4,4.7-p*2.7));}
     for(let i=0;i<3;i++)if(elapsed>nextShots[i]){
-      launch(i);nextShots[i]=elapsed+rand(Math.max(2.45,9.2-p*6.2),Math.max(3.1,11.0-p*7.4));
+      launch(i);nextShots[i]=elapsed+rand(Math.max(5.8,11.2-p*3.9),Math.max(8.5,15.5-p*5.0));
     }
     ctx.clearRect(0,0,W,H);
+    environment(p);
     clouds(dt*every);
     ctx.save();ctx.globalCompositeOperation='lighter';flight(dt*every);flashAndShocks(dt*every);hotDebris(dt*every);ctx.restore();
   }
   document.addEventListener('visibilitychange',()=>{onscreen=!document.hidden;prev=0;});
   addEventListener('resize',place,{passive:true});place();
-  window.__kimsdayImpactV7={get state(){return {shots:shots.length,bursts:bursts.length,smoke:smokes.length,particles:fireflies.length,hits:events,lettersVisible:sites.map(x=>x.classList.contains('revealed')),elapsed:Math.round(elapsed*10)/10};},trigger(index){launch(clamp(index|0,0,2));}};
-  if(reduced){sites.forEach(s=>s.classList.add('revealed'));sites.forEach(s=>s.querySelectorAll('.death-glyph').forEach(g=>{g.style.opacity='1'}));}
+  window.__kimsdayImpactV7={get state(){return {shots:shots.length,bursts:bursts.length,smoke:smokes.length,particles:fireflies.length,hits:events,ambientHits,impactSites:siteState.map(st=>({x:st.anchor,y:st.lift})),lettersVisible:sites.map(x=>x.classList.contains('revealed')&&!x.classList.contains('vanishing')),elapsed:Math.round(elapsed*10)/10};},trigger(index){launch(clamp(index|0,0,2));}};
+  if(reduced){sites.forEach(s=>s.classList.remove('revealed','cooling','detonating','vanishing'));}
   else requestAnimationFrame(render);
 })();
