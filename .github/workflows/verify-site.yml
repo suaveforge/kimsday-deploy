@@ -1,4 +1,4 @@
-name: Verify KIM'S DAY V6 public site
+name: Verify KIM'S DAY V7 live effects
 on:
   push:
     branches: [main]
@@ -6,26 +6,32 @@ on:
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
-  verify-site:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
-      - name: Check deployed custom domain and cinematic asset
+      - name: Verify V7 custom domain and real explosion engine
         shell: bash
         run: |
-          set -euo pipefail
-          for i in $(seq 1 10); do
-            CODE=$(curl -L --connect-timeout 8 --max-time 20 -sS -o /tmp/kimsday.html -w '%{http_code}' 'https://kimsday.suaveforge.com/' || true)
-            echo "HTML_ATTEMPT=$i STATUS=$CODE"
-            if [ "$CODE" = 200 ] && grep -q 'KIMSDAY-V6-CINEMA-IMPACT-20261118' /tmp/kimsday.html; then break; fi
-            sleep 6
+          set -Eeuo pipefail
+          for i in $(seq 1 18); do
+            HTML=$(curl -LsS --connect-timeout 8 --max-time 22 -o /tmp/kimsday-v7.html -w '%{http_code}' 'https://kimsday.suaveforge.com/' || true)
+            echo "HTML_ATTEMPT=$i STATUS=$HTML"
+            if [ "$HTML" = 200 ] && grep -Fq 'KIMSDAY-V7-LIVE-EXPLOSION-20261118' /tmp/kimsday-v7.html; then break; fi
+            sleep 7
           done
-          test "$CODE" = 200
-          grep -q 'KIMSDAY-V6-CINEMA-IMPACT-20261118' /tmp/kimsday.html
-          grep -q 'class="impact-stage"' /tmp/kimsday.html
-          ! grep -q 'class="log-grid"' /tmp/kimsday.html
-          ASSET=$(curl -L --connect-timeout 8 --max-time 20 -sS -o /tmp/kimsday.webp -w '%{http_code}' 'https://kimsday.suaveforge.com/assets/kimsday-barrage.webp' || true)
-          echo "ASSET_STATUS=$ASSET"
-          test "$ASSET" = 200
-          test "$(wc -c < /tmp/kimsday.webp)" -gt 150000
-          echo 'KIMSDAY_V6_PRODUCTION_VERIFIED=YES'
+          test "$HTML" = 200
+          grep -Fq 'KIMSDAY-V7-LIVE-EXPLOSION-20261118' /tmp/kimsday-v7.html
+          grep -Fq 'assets/impact-v7.js' /tmp/kimsday-v7.html
+          grep -Fq 'assets/impact-v7.css' /tmp/kimsday-v7.html
+          ! grep -Fq 'background:url("assets/kimsday-barrage.webp")' /tmp/kimsday-v7.html
+          grep -Fq '1.5베' /tmp/kimsday-v7.html
+          for t in js css; do
+            CODE=$(curl -LsS --connect-timeout 8 --max-time 20 -o /tmp/kimsday-impact.$t -w '%{http_code}' "https://kimsday.suaveforge.com/assets/impact-v7.$t" || true)
+            echo "IMPACT_$t HTTP=$CODE"
+            test "$CODE" = 200
+          done
+          grep -Fq 'function impact(s)' /tmp/kimsday-impact.js
+          grep -Fq 'setTimeout(()=>{el.classList.add' /tmp/kimsday-impact.js
+          grep -Fq 'death-glyph-forge' /tmp/kimsday-impact.css
+          echo 'KIMSDAY_V7_PUBLIC_LIVE_EXPLOSIONS=VERIFIED'
