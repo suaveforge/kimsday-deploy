@@ -1,0 +1,31 @@
+name: Verify KIM'S DAY V6 public site
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-site.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  verify-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check deployed custom domain and cinematic asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 10); do
+            CODE=$(curl -L --connect-timeout 8 --max-time 20 -sS -o /tmp/kimsday.html -w '%{http_code}' 'https://kimsday.suaveforge.com/' || true)
+            echo "HTML_ATTEMPT=$i STATUS=$CODE"
+            if [ "$CODE" = 200 ] && grep -q 'KIMSDAY-V6-CINEMA-IMPACT-20261118' /tmp/kimsday.html; then break; fi
+            sleep 6
+          done
+          test "$CODE" = 200
+          grep -q 'KIMSDAY-V6-CINEMA-IMPACT-20261118' /tmp/kimsday.html
+          grep -q 'class="impact-stage"' /tmp/kimsday.html
+          ! grep -q 'class="log-grid"' /tmp/kimsday.html
+          ASSET=$(curl -L --connect-timeout 8 --max-time 20 -sS -o /tmp/kimsday.webp -w '%{http_code}' 'https://kimsday.suaveforge.com/assets/kimsday-barrage.webp' || true)
+          echo "ASSET_STATUS=$ASSET"
+          test "$ASSET" = 200
+          test "$(wc -c < /tmp/kimsday.webp)" -gt 150000
+          echo 'KIMSDAY_V6_PRODUCTION_VERIFIED=YES'
