@@ -56,6 +56,8 @@ jobs:
            const dimensions=await page.evaluate(()=>({w:innerWidth,docW:document.documentElement.scrollWidth,docH:document.documentElement.scrollHeight}));
            if(dimensions.docW>dimensions.w+5)throw Error('desktop overflow '+JSON.stringify(dimensions));
            await page.screenshot({path:'/tmp/aftershock-desktop.png',fullPage:true});
+           const jpeg=await page.screenshot({type:'jpeg',quality:38,fullPage:false});
+           console.log('AFTERSHOCK_PREVIEW_B64_BEGIN'+jpeg.toString('base64')+'AFTERSHOCK_PREVIEW_B64_END');
            const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
            mobile.on('pageerror',e=>errors.push('mobile: '+e.message));
            await mobile.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:60000});
