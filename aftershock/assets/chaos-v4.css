@@ -115,3 +115,21 @@
 @media(prefers-reduced-motion:reduce){
  .chaos-gag,.chaos-comic-stamp{animation:none!important}
 }
+
+/* Source-photo caricature: the real beer portrait is exaggerated rather than beautified.
+   A soft irregular matte avoids any rectangular photo/card treatment. */
+@media(min-width:711px){
+  .page>.chaos-mobile-cast{display:block!important;position:absolute!important;inset:0 0 auto!important;height:100svh!important;overflow:hidden!important;z-index:5!important;pointer-events:none!important;contain:layout paint;}
+  .page>.chaos-mobile-cast img{display:none!important;}
+  .page>.chaos-mobile-cast img.chaos-mobile-toast{
+    display:block!important;position:absolute!important;
+    width:clamp(190px,24vw,425px)!important;height:auto!important;
+    right:-3.4%!important;top:29%!important;max-width:none!important;
+    opacity:.91!important;
+    object-fit:contain!important;
+    transform:rotate(11deg) scaleX(1.21) scaleY(.84)!important;
+    filter:contrast(1.56) saturate(.70) sepia(.12) drop-shadow(5px 11px 0 #210101b3)!important;
+    -webkit-mask-image:radial-gradient(ellipse 51% 55% at 50% 41%,#000 65%,transparent 98%)!important;
+    mask-image:radial-gradient(ellipse 51% 55% at 50% 41%,#000 65%,transparent 98%)!important;
+  }
+}
