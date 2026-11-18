@@ -48,19 +48,21 @@ jobs:
             });
             if(!state.build.includes('V4-FRONTMOST'))throw Error('wrong build '+JSON.stringify(state));
             if(state.gags!==4||state.impactZ<=state.collageZ||state.width>state.inner+8)throw Error('incorrect layering '+JSON.stringify(state));
-            await page.evaluate(()=>window.__kimsdayImpactV7.trigger(1));
-            await page.waitForTimeout(2500);
-            const visible=await page.evaluate(()=>({
-              caption:+getComputedStyle(document.querySelector('.impact-center .impact-words')).opacity,
-              text:document.querySelector('.impact-center .impact-words').innerText,
-              state:window.__kimsdayImpactV7.state,
-              top:document.querySelector('.impact-center .impact-words').getBoundingClientRect().top,
-              clockBottom:document.querySelector('.clock-shell').getBoundingClientRect().bottom
-            }));
+            await page.waitForFunction(()=>Array.from(document.querySelectorAll('.impact-omen')).some(el=>el.classList.contains('revealed')&&parseFloat(getComputedStyle(el.querySelector('.impact-words')).opacity)>.85),null,{timeout:14000});
+            const visible=await page.evaluate(()=>{
+              const active=document.querySelector('.impact-omen.revealed'),w=active.querySelector('.impact-words');
+              return {which:active.dataset.omen,caption:+getComputedStyle(w).opacity,
+                text:w.innerText,state:window.__kimsdayImpactV7.state,
+                top:w.getBoundingClientRect().top,
+                clockBottom:document.querySelector('.clock-shell').getBoundingClientRect().bottom};
+            });
             if(visible.caption<.85)throw Error('Impact caption not visibly lit '+JSON.stringify(visible));
             await page.screenshot({path:'/tmp/aftershock-v4-desktop.png',fullPage:false});
-            await page.waitForTimeout(4600);
-            const fade=await page.evaluate(()=>({alpha:+getComputedStyle(document.querySelector('.impact-center .impact-words')).opacity,revealed:document.querySelector('.impact-center').classList.contains('revealed')}));
+            await page.waitForTimeout(6100);
+            const fade=await page.evaluate((which)=>{
+              const el=document.querySelector('.impact-omen[data-omen="'+which+'"]');
+              return {alpha:+getComputedStyle(el.querySelector('.impact-words')).opacity,revealed:el.classList.contains('revealed')};
+            },visible.which);
             if(fade.alpha>.12 || fade.revealed)throw Error('Fade-out not complete '+JSON.stringify(fade));
             const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
             mobile.on('pageerror',e=>errors.push('mobile '+e.message));
