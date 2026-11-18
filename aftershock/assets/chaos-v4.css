@@ -160,3 +160,39 @@
   .chaos-gags .cg-toast{top:auto!important;bottom:13%!important;right:0!important;font-size:12px!important;}
   .chaos-comic-stamp{display:none!important;}
 }
+
+
+/* MOBILE SOURCE FIDELITY: four corner crops come from the very same
+   chaos-matte.webp used on desktop. No regenerated or altered portrait. */
+.chaos-mobile-cast > .chaos-poster-crop { display:none; }
+@media(max-width:710px){
+  .page > .chaos-mobile-cast > img { display:none!important; }
+  .page > .chaos-mobile-cast > .chaos-poster-crop {
+    display:block!important;
+    position:absolute!important;
+    width:59vw;
+    height:39svh;
+    max-width:none;
+    background-image:url('chaos-matte.webp');
+    background-repeat:no-repeat;
+    background-size:auto clamp(460px,59svh,580px);
+    opacity:.96;
+    -webkit-mask-image:radial-gradient(ellipse 59% 56% at 50% 50%,#000 53%,transparent 98%);
+    mask-image:radial-gradient(ellipse 59% 56% at 50% 50%,#000 53%,transparent 98%);
+    filter:none;
+    transform:none;
+    pointer-events:none;
+  }
+  .page > .chaos-mobile-cast > .chaos-poster-crop--singer {
+    left:-7%;top:4%;background-position:left top;
+  }
+  .page > .chaos-mobile-cast > .chaos-poster-crop--stare {
+    right:-7%;top:4%;width:57vw;height:35svh;background-position:right top;
+  }
+  .page > .chaos-mobile-cast > .chaos-poster-crop--sulk {
+    left:-8%;bottom:4%;height:42svh;background-position:left bottom;
+  }
+  .page > .chaos-mobile-cast > .chaos-poster-crop--toast {
+    right:-8%;bottom:4%;width:61vw;height:42svh;background-position:right bottom;
+  }
+}
