@@ -44,6 +44,7 @@ jobs:
            const build=await page.locator('main.page').getAttribute('data-build');
            if(!build.includes('AFTERSHOCK'))throw Error('wrong build '+build);
            if(await page.locator('.as-file').count()!==4)throw Error('dossier count');
+           await page.waitForFunction(()=>Array.from(document.querySelectorAll('.as-files img,.aftershock-survivor img')).every(x=>x.complete&&x.naturalWidth>0),null,{timeout:25000});
            const img=await page.locator('.as-files img,.aftershock-survivor img').evaluateAll(els=>els.map(x=>({ok:x.complete&&x.naturalWidth>0,src:x.currentSrc})));
            if(img.some(x=>!x.ok))throw Error('image failed '+JSON.stringify(img));
            const audio=await page.evaluate(()=>({playing:!document.getElementById('doomAudio').paused,currentTime:document.getElementById('doomAudio').currentTime,src:document.getElementById('doomAudio').currentSrc}));
