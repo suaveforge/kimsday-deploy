@@ -1,4 +1,4 @@
-/* V7 - real-time procedural impacts. No pre-rendered explosion photo. */
+/* V8 - drifting randomized impacts, transient ash-script and living ruined background. */
 .impact-stage::after {content:none!important;display:none!important;background:none!important;animation:none!important;}
 .impact-stage::before {background:linear-gradient(0deg,rgba(12,2,2,.34),transparent 70%);}
 .impact-crater,.impact-pillar,.impact-cloud,.impact-afterglow,.impact-shock{display:none!important;}
@@ -31,3 +31,23 @@
  .impact-left{left:25%;}.impact-center{left:50%;}.impact-right{left:75%;}
  .impact-words{left:-1%;right:-1%;bottom:55%;font-size:clamp(15px,4.2vw,19px);}
 }
+
+/* A strike now moves to a new position; neither its caption nor smoke is permanent. */
+.impact-omen{transition:none!important;will-change:left,bottom;}
+.impact-omen .impact-words{opacity:0!important;filter:blur(8px);transition:opacity .26s ease,transform 1.7s ease,filter 1.7s ease!important;pointer-events:none;}
+.impact-omen.revealed:not(.vanishing) .impact-words{opacity:1!important;filter:blur(0)!important;}
+.impact-omen.vanishing .impact-words,
+.impact-omen.cooling .impact-words{opacity:0!important;transform:rotate(var(--turn)) translateY(-34px) scale(.88)!important;filter:blur(11px)!important;transition:opacity 1.9s ease,transform 1.9s ease,filter 1.9s ease!important;}
+.impact-omen.vanishing .death-glyph{color:#d37d62;text-shadow:0 0 4px #ce421b;}
+/* The horizon has depth and motion even in gaps between bombardments. */
+.page .doom-art{filter:brightness(calc(.91 + var(--world-p)*.24)) contrast(1.17) saturate(calc(1.20 + var(--world-p)*.70));transform:scale(calc(1.02 + var(--world-p)*.13));transition:filter 8s linear,transform 12s linear;}
+.page .world-inferno{opacity:calc(.42 + var(--world-p)*.45)!important;top:calc(355px - var(--world-p)*56px);height:clamp(340px,52vh,690px);background:radial-gradient(ellipse at 10% 86%,rgba(255,75,15,.57),transparent 49%),radial-gradient(ellipse at 52% 92%,rgba(214,33,13,.25),transparent 48%),radial-gradient(ellipse at 89% 78%,rgba(255,51,12,.58),transparent 49%);animation:world-fire-dance 3.6s ease-in-out infinite alternate;filter:blur(24px);}
+.page .world-bloodwash{opacity:calc(.11 + var(--world-p)*.58)!important;animation:blood-sky-breathe 16s ease-in-out infinite alternate;}
+@keyframes blood-sky-breathe{from{transform:translateY(-10px) scale(1.04);filter:hue-rotate(-10deg)}to{transform:translateY(24px) scale(1.13);filter:hue-rotate(9deg)}}
+.page .impact-stage:before{background:linear-gradient(0deg,rgba(28,4,2,.52),rgba(34,8,6,.12) 35%,transparent 85%),radial-gradient(ellipse at 50% 100%,rgba(255,59,11,calc(.11 + var(--world-p)*.21)),transparent 79%);animation:ruined-ground-breathe 7s ease-in-out infinite alternate;}
+@keyframes ruined-ground-breathe{to{opacity:.59;filter:brightness(1.34)}}
+@media(max-width:480px){
+ .impact-omen{width:58%!important;}
+ .impact-words{font-size:clamp(15px,4.1vw,20px)!important;}
+}
+@media(prefers-reduced-motion:reduce){.impact-omen .impact-words{transition:none!important}}
