@@ -196,3 +196,16 @@
     right:-8%;bottom:4%;width:61vw;height:42svh;background-position:right bottom;
   }
 }
+
+
+/* EXCLUDE UNVERIFIED MIXED PORTRAIT — no source photo files are modified */
+@media (min-width:711px){
+  .page > .chaos-matte {
+    -webkit-mask-image:radial-gradient(ellipse 35% 55% at 84% 79%,transparent 0%,transparent 46%,#000 100%)!important;
+    mask-image:radial-gradient(ellipse 35% 55% at 84% 79%,transparent 0%,transparent 46%,#000 100%)!important;
+  }
+}
+@media (max-width:710px){
+  .page > .chaos-mobile-cast > .chaos-poster-crop--toast { display:none!important; }
+  .page > .chaos-mobile-cast > img.chaos-mobile-toast { display:none!important; }
+}
