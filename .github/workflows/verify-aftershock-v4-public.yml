@@ -1,0 +1,33 @@
+name: AFTERSHOCK V4 public deployment verification
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-aftershock-v4-public.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Verify live hostname has latest code and effect scripts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for i in $(seq 1 20); do
+            CODE=$(curl --connect-timeout 8 --max-time 18 -sSL -o /tmp/chaos-live.html -w '%{http_code}' "https://kimsday.suaveforge.com/aftershock/?qa=$i" || true)
+            if [ "$CODE" = 200 ] && grep -Fq 'KIMSDAY-AFTERSHOCK-V4-FRONTMOST-IMPACTS-COMEDY-20261118' /tmp/chaos-live.html; then break; fi
+            echo "WAIT_PUBLIC_V4_ATTEMPT=$i HTTP=$CODE"
+            sleep 5
+          done
+          test "$CODE" = 200
+          grep -Fq 'assets/chaos-v4.css?v=5' /tmp/chaos-live.html
+          grep -Fq 'assets/impact-comedy.js?v=5' /tmp/chaos-live.html
+          grep -Fq '영혼은 퇴근함' /tmp/chaos-live.html
+          for path in assets/chaos-v4.css assets/impact-comedy.js; do
+            c=$(curl --connect-timeout 8 --max-time 18 -sSL -o /tmp/chaos-public-asset -w '%{http_code}' "https://kimsday.suaveforge.com/aftershock/$path?v=5" || true)
+            echo "PUBLIC_ASSET_$path=$c"
+            test "$c" = 200
+          done
+          grep -Fq 'nextCaption=elapsed+rand(7.1,9.1)' /tmp/chaos-public-asset
+          echo 'AFTERSHOCK_COMEDY_V4_LIVE_DOMAIN_VERIFIED=YES'
