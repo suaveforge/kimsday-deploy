@@ -13,7 +13,7 @@
   const mobile=()=>innerWidth<670;
   let W=0,H=0,dpr=1,stageBottom=0,stageHeight=0,elapsed=0,prev=0,frame=0,renderTimer=0;
   let shots=[],bursts=[],smokes=[],fireflies=[],rubble=[];
-  let nextShots=[.16,.82,1.48],nextAmbient=.53,lastAmbientX=-9999,ambientHits=0,events=0,onscreen=true;let startTime=0,lastPaint=0;
+  let nextCaption=.25,captionSeq=0,nextAmbient=.53,lastAmbientX=-9999,ambientHits=0,events=0,onscreen=true;let startTime=0,lastPaint=0;
   const focus=[.37,.50,.63];
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const sprite=(kind,seed)=>{
@@ -276,8 +276,9 @@
     const every=1;
     const p=heat();
     if(elapsed>nextAmbient){launchAmbient();nextAmbient=elapsed+rand(Math.max(2.2,4.6-p*1.85),Math.max(3.6,6.9-p*2.15));}
-    for(let i=0;i<3;i++)if(elapsed>nextShots[i]){
-      launch(i);nextShots[i]=elapsed+rand(Math.max(5.8,11.2-p*3.9),Math.max(8.5,15.5-p*5.0));
+    if(elapsed>nextCaption){
+      launch(captionSeq++%3);
+      nextCaption=elapsed+rand(7.1,9.1);
     }
     ctx.clearRect(0,0,W,H);
     // The detailed city now lives in the cached SVG layer, not rebuilt every frame.
