@@ -68,9 +68,9 @@ jobs:
             mobile.on('pageerror',e=>errors.push('mobile '+e.message));
             await mobile.goto(base,{waitUntil:'domcontentloaded'});
             await mobile.waitForFunction(()=>!!window.__kimsdayImpactV7,{timeout:14000});
-            const m=await mobile.evaluate(()=>({inner:innerWidth,outer:document.documentElement.scrollWidth,gags:document.querySelectorAll('.chaos-gag').length}));
+            const m=await mobile.evaluate(()=>({inner:innerWidth,outer:document.documentElement.scrollWidth,pageHeight:document.querySelector('.page').getBoundingClientRect().height,viewportHeight:innerHeight,gags:document.querySelectorAll('.chaos-gag').length}));
             await mobile.screenshot({path:'/tmp/aftershock-v4-mobile.png',fullPage:true});
-            if(m.outer>m.inner+8||m.gags!==4)throw Error('mobile overflow '+JSON.stringify(m));
+            if(m.outer>m.inner+8||m.gags!==4||m.pageHeight>m.viewportHeight+7)throw Error('mobile overflow or vertical gap '+JSON.stringify(m));
             if(errors.length)throw Error('script errors '+JSON.stringify(errors.slice(0,10)));
             console.log('AFTERSHOCK_V4_SOURCE_PASS '+JSON.stringify({state,visible,fade,m,errors:0}));
             await browser.close();
