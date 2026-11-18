@@ -27,8 +27,15 @@ jobs:
           file /tmp/kimsday-v10.mp3
           echo 'STEREO_METADATA_VERIFIED_LOCALLY=YES'
           echo 'V10_SOUNDTRACK_ASSET=PASS'
+      - name: Install Google Chrome for browser validation
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
       - name: Browser test for autoplay, blocked autoplay and explicit mute
         shell: bash
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
         run: |
           npm install --prefix "$RUNNER_TEMP/kimsday-v10-test" --silent --no-audit --no-fund playwright-core@1.56.1
           export MODULE_PATH="$RUNNER_TEMP/kimsday-v10-test/node_modules/playwright-core"
