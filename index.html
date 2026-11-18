@@ -526,12 +526,37 @@ body { overflow:hidden; }
  .impact-right .impact-words span:first-child{font-size:.77em}
 }
 </style>
-<link rel="stylesheet" href="assets/impact-v7.css?v=8">
+<link rel="stylesheet" href="assets/impact-v7.css?v=9">
 <style>.nickname .ilbe-context{font:700 10px var(--font-kr);letter-spacing:0;color:#ff7f65;margin-right:9px;border-right:1px solid rgba(255,144,112,.50);padding-right:10px}.subject-markers .nickname{display:inline-flex;align-items:center;gap:1px;box-shadow:0 0 16px rgba(222,37,19,.17)}@media(max-width:420px){.nickname .ilbe-context{font-size:8px!important;padding-right:5px;margin-right:5px}.subject-markers .nickname b{font-size:12px}}</style>
+
+<style id="v9-lightweight-world">
+/* One artwork, one throttled effects renderer: no redundant full-screen canvases. */
+#embers,#warCanvas,#soundButton{display:none!important;}
+.ruins-matte{position:absolute;inset:0 0 auto;height:min(1100px,120svh);pointer-events:none;z-index:1;background:url('assets/ruins-v9.svg') center bottom/cover no-repeat;opacity:clamp(.63,calc(.69 + var(--world-p)*.21),.95);}
+.page>.doom-art{filter:none!important;animation:none!important;transition:none!important;will-change:auto!important;transform:none!important;opacity:.91;}
+.page>.world-bloodwash,.page>.world-inferno,.page>.sky .clouds,.page>.sky .ash-rain,
+.page>.screen-grain,.page>.screen-breath,.page>.monster-world .kaiju-mover img,
+.page>.sky-cracks,.page>.doom-shockwave{animation:none!important;transition:none!important;will-change:auto!important;}
+.page::before,.page::after{animation:none!important;}
+.page .monster-world{contain:layout paint;}
+.page .world-inferno{filter:none!important;opacity:calc(.20 + var(--world-p)*.43)!important;}
+.page .world-bloodwash{opacity:calc(.11 + var(--world-p)*.28)!important;}
+.page .clouds{filter:none!important;opacity:.10!important;}
+body.stage-8 .page{animation:none!important;}
+/* Audio belongs with controls, not over the event horizon or clock. */
+.topbar .top-right{display:flex;align-items:center;gap:8px;}
+.topbar #audioLaunch{display:inline-flex;position:relative;z-index:30;gap:5px;min-width:0;min-height:33px;margin:0!important;padding:6px 10px!important;border:1px solid rgba(246,118,82,.48);border-radius:4px;background:rgba(13,5,6,.79);font:700 11px var(--font-kr);letter-spacing:0;animation:none!important;box-shadow:none!important;white-space:nowrap;transition:border-color .2s;}
+.topbar #audioLaunch .audio-mark{font-size:14px;}
+.topbar #audioLaunch:hover{border-color:#ff986c;background:rgba(55,18,13,.86);}
+.topbar #audioLaunch[aria-pressed="true"]{background:rgba(18,49,39,.82);border-color:#5ba983;color:#b9f4da;}
+@media(max-width:710px){.topbar .transmission{display:none!important}.topbar .top-right{gap:5px}.topbar #audioLaunch{padding:6px 8px!important;font-size:10px}.topbar .top-action{padding:7px 8px}.ruins-matte{background-size:auto 100%;background-position:50% bottom;opacity:.82}}
+@media(max-width:355px){.topbar #audioLaunch .audio-text{font-size:0}.topbar #audioLaunch .audio-mark{font-size:16px}.topbar #audioLaunch{padding:6px 9px!important}}
+@media(prefers-reduced-motion:reduce){.ruins-matte{transition:none!important}}
+</style>
 </head>
 <body>
- <main class="page" data-build="KIMSDAY-V8-SCATTERED-IMPACTS-20261118">
-  <div class="doom-art" aria-hidden="true"></div>
+ <main class="page" data-build="KIMSDAY-V9-LIGHTWEIGHT-WORLD-20261118">
+  <div class="doom-art" aria-hidden="true"></div><div class="ruins-matte" aria-hidden="true"></div>
   
   <div class="world-bloodwash" aria-hidden="true"></div><div class="world-inferno" aria-hidden="true"></div>
   <div class="monster-world" aria-hidden="true">
@@ -619,6 +644,7 @@ body { overflow:hidden; }
     </a>
     <div class="top-right">
       <span class="transmission"><span class="live-dot"></span> <span id="transmissionText">PROPHECY ACTIVE</span></span><button type="button" id="demoFlag" class="demo-flag" hidden title="실제 시간으로 복귀">SIMULATION ↺</button>
+      <button type="button" id="audioLaunch" class="audio-launch" aria-pressed="false" aria-label="사운드 켜기 또는 끄기"><span class="audio-mark" aria-hidden="true">🔊</span><span class="audio-text">사운드 켜기</span></button>
       <button type="button" class="top-action" id="configButton" aria-label="예상 종말 일시 수정">D-DAY 설정 ↗</button>
     </div>
    </header>
@@ -628,7 +654,7 @@ body { overflow:hidden; }
     <div class="title-echo" id="titleEcho">JUDGMENT DAY</div>
     <p class="decree" id="decree">김상 회사생활 종말 예언</p>
     <div class="subject-markers"><span>SUBJECT // KIM SANG</span><span class="nickname" title="일베와 이베 사이를 빗댄 풍자적 별명"><small class="ilbe-context">일베 ↔ 이베</small><b>1.5베</b></span></div>
-    <button type="button" id="audioLaunch" class="audio-launch" aria-pressed="false"><span class="audio-mark">🔊</span> 사운드 켜기 <small>누르면 경보·포격·괴물 사운드 재생</small></button>
+    
     <div class="clock-shell" aria-label="종말 예상 시각까지 남은 시간" role="timer">
       <div class="clock-title" id="clockTitle">ESTIMATED TIME UNTIL COLLAPSE</div>
       <div class="clock" aria-live="off">
@@ -695,7 +721,7 @@ body { overflow:hidden; }
   const asKST = str => Date.parse(str+':00+09:00');
   const pad2=n=>String(n).padStart(2,'0');
   let configured=ORIGINAL, target, simulation=null, lastDisplayedSecond=null, currentStage=-1;
-  let worldIntensity=0;
+  let worldIntensity=0,lastWorldApplied=-1,lastWorldStage=-1,lastWorldSimulation=false;
   try{const v=localStorage.getItem(STORAGE_KEY);if(v&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v))configured=v;}catch(_){}
   target=asKST(configured);
   function updateDeadline(){
@@ -757,9 +783,12 @@ body { overflow:hidden; }
    document.body.classList.toggle('expired',leftMs===0);
    const total=Math.max(1,target-START_UTC);
    const elapsed=simulation===null?Math.max(0,Math.min(1,(now-START_UTC)/total)):Math.max(0,Math.min(1,1-leftMs/(21*DAY*1000)));
-   updateWorld(elapsed);
-   $('progressBar').style.width=`${elapsed*100}%`;
-   $('progressText').textContent=simulation===null?`${(elapsed*100).toFixed(2)}% ELAPSED`:'SIMULATION / TIME WARP';
+   if(lastWorldApplied<0 || Math.abs(elapsed-lastWorldApplied)>=.00025 || stage!==lastWorldStage || lastWorldSimulation!==(simulation!==null)){
+     updateWorld(elapsed);
+     $('progressBar').style.width=`${elapsed*100}%`;
+     $('progressText').textContent=simulation===null?`${(elapsed*100).toFixed(2)}% ELAPSED`:'SIMULATION / TIME WARP';
+     lastWorldApplied=elapsed;lastWorldStage=stage;lastWorldSimulation=(simulation!==null);
+   }
    if(lastDisplayedSecond!==totalSeconds){
     lastDisplayedSecond=totalSeconds;
     if(sound.active)sound.onSecond(stage,leftMs/1000);
@@ -875,7 +904,7 @@ body { overflow:hidden; }
   // Ash/embers react to the current phase. No external requests, and the canvas respects reduced motion.
   const canvas=$('embers'),ctx=canvas.getContext&&canvas.getContext('2d');
   const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(ctx&&!reduceMotion){
+  if(false&&ctx&&!reduceMotion){
    let particles=[],cw=0,ch=0,frame=0;
    function resize(){
     const dpr=Math.min(window.devicePixelRatio||1,1.5);
@@ -902,7 +931,7 @@ body { overflow:hidden; }
 
   // FURY ENGINE: storm, kinetic embers, artillery-like meteors, branched lightning and zero-hour shockwaves.
   const warCanvas=$('warCanvas'),war=warCanvas.getContext&&warCanvas.getContext('2d');
-  if(war&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  if(false&&war&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
    let W=0,H=0,bolts=[],meteors=[],ashes=[],t=0,lastLightning=0,lastMeteor=0,lastPhase=-1;
    const rand=(a,b)=>a+Math.random()*(b-a);
    function warResize(){const d=Math.min(devicePixelRatio||1,1.5);W=innerWidth;H=Math.max(document.querySelector('.page').offsetHeight,innerHeight);warCanvas.width=Math.round(W*d);warCanvas.height=Math.round(H*d);war.setTransform(d,0,0,d,0,0);ashes=Array.from({length:125},()=>({x:rand(0,W),y:rand(0,Math.min(H,900)),speed:rand(.5,3),r:rand(.7,2.8),a:rand(.15,.8),s:rand(0,6)}));}
@@ -968,9 +997,9 @@ body { overflow:hidden; }
     resizeSiege();window.addEventListener('resize',resizeSiege,{passive:true});requestAnimationFrame(draw);
   }
 
-  updateClock();setInterval(updateClock,200);
+  updateClock();setInterval(updateClock,1000);
  })();
  </script>
-<script defer src="assets/impact-v7.js?v=8"></script>
+<script defer src="assets/impact-v7.js?v=9"></script>
 </body>
 </html>
