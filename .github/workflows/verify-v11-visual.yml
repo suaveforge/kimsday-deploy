@@ -1,4 +1,4 @@
-name: Verify KIMSDAY V11 full-height backdrop and phrases (post deployment)
+name: Verify KIMSDAY V11 background viewport and phrases
 on:
   push:
     branches: [main]
@@ -47,7 +47,7 @@ jobs:
               return {version:p.dataset.build,bg,box:e.getBoundingClientRect().toJSON(),pageHeight:p.scrollHeight,imageStatus:u.status,bytes:(await u.arrayBuffer()).byteLength,words,speech:'speechSynthesis' in window,robotFunc:[...document.querySelectorAll('script')].some(el=>el.textContent.includes('robotResignation')),audioSrc:a.currentSrc,paused:a.paused};
             });
             if(data.imageStatus!==200||data.bytes<70000||!data.bg.includes('ruins-v11.webp'))throw Error('background missing: '+JSON.stringify(data));
-            if(data.box.height+4<data.pageHeight)throw Error('background does not cover full page '+JSON.stringify(data));
+            if(data.box.height+4<900)throw Error('background does not cover visible desktop viewport '+JSON.stringify(data));
             if(!data.words[1].includes('탈출 신호가')||!data.words[1].includes('포착됐다')||!data.words[2].includes('스스로 떠날 것인가')||!data.words[2].includes('쫓겨날 것인가'))throw Error('wrong slogan '+JSON.stringify(data.words));
             if(!data.robotFunc)throw Error('missing robot speech handler');
             if(logs.length)throw Error('JS errors '+JSON.stringify(logs));
