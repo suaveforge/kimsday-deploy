@@ -1,0 +1,79 @@
+name: Verify AFTERSHOCK comedic collision layer V4
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-aftershock-comedy-v4.yml']
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Install browser test
+        run: npm install --prefix "$RUNNER_TEMP/chaos-check" --silent --no-audit --no-fund playwright-core@1.56.1
+      - name: Visual DOM and interaction audit for desktop and mobile
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MODULE_PATH="$RUNNER_TEMP/chaos-check/node_modules/playwright-core"
+          node <<'NODE'
+          const {chromium}=require(process.env.MODULE_PATH);
+          (async()=>{
+            const b=await chromium.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            let errors=[];
+            const page=await b.newPage({viewport:{width:1660,height:935},deviceScaleFactor:1});
+            page.on('pageerror',e=>errors.push('desktop: '+e.message));
+            await page.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:55000});
+            await page.waitForFunction(()=>document.querySelector('.page')?.dataset.build?.includes('V4-FRONTMOST'),{timeout:70000});
+            await page.waitForFunction(()=>Boolean(window.__kimsdayImpactV7),{timeout:15000});
+            let info=await page.evaluate(()=>{
+              const stage=document.querySelector('.impact-stage'),words=document.querySelector('.impact-center .impact-words'),clock=document.querySelector('.clock-shell');
+              return {build:document.querySelector('.page').dataset.build,
+                impactZ:getComputedStyle(stage).zIndex,matteZ:getComputedStyle(document.querySelector('.chaos-matte')).zIndex,
+                writersZ:getComputedStyle(document.querySelector('.chaos-scene-writing')).zIndex,
+                stage:stage.getBoundingClientRect().toJSON(),words:words.getBoundingClientRect().toJSON(),
+                clock:clock.getBoundingClientRect().toJSON(),gags:document.querySelectorAll('.chaos-gag').length,
+                text:document.querySelector('.cg-singer')?.innerText,asset:performance.getEntriesByType('resource').filter(x=>/impact-comedy|chaos-v4/.test(x.name)).map(x=>x.name),
+                width:document.documentElement.scrollWidth,viewport:innerWidth};
+            });
+            if(info.gags!==4)throw Error('Comic labels missing '+JSON.stringify(info));
+            if(+info.impactZ <= +info.matteZ || +info.impactZ <= +info.writersZ)throw Error('Meteor captions hidden behind composite '+JSON.stringify(info));
+            if(info.width>info.viewport+7)throw Error('Desktop overflow');
+            await page.evaluate(()=>window.__kimsdayImpactV7.trigger(1));
+            await page.waitForTimeout(2600);
+            let initial=await page.evaluate(()=>({state:window.__kimsdayImpactV7.state,shown:document.querySelector('.impact-center').classList.contains('revealed'),caption:getComputedStyle(document.querySelector('.impact-center .impact-words')).opacity}));
+            if(!initial.shown || +initial.caption<.8)throw Error('Impact caption not shown '+JSON.stringify(initial));
+            await page.screenshot({path:'/tmp/aftershock-comedy-desktop.png'});
+            await page.waitForTimeout(4300);
+            let faded=await page.evaluate(()=>({opacity:getComputedStyle(document.querySelector('.impact-center .impact-words')).opacity,revealed:document.querySelector('.impact-center').classList.contains('revealed')}));
+            if(+faded.opacity>.10||faded.revealed)throw Error('Caption did not fade '+JSON.stringify(faded));
+            const mob=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1});
+            mob.on('pageerror',e=>errors.push('mobile: '+e.message));
+            await mob.goto('https://kimsday.suaveforge.com/aftershock/',{waitUntil:'domcontentloaded',timeout:55000});
+            await mob.waitForFunction(()=>Boolean(window.__kimsdayImpactV7),{timeout:15000});
+            await mob.waitForTimeout(1300);
+            const mm=await mob.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth,comedy:document.querySelectorAll('.chaos-gag').length,fonts:getComputedStyle(document.querySelector('.cg-singer')).fontSize,impactZ:getComputedStyle(document.querySelector('.impact-stage')).zIndex}));
+            if(mm.scroll>mm.viewport+7||mm.comedy!==4)throw Error('mobile layout '+JSON.stringify(mm));
+            await mob.screenshot({path:'/tmp/aftershock-comedy-mobile.png',fullPage:true});
+            await mob.locator('#chaosSongButton').click();
+            const opened=await mob.locator('.chaos-media.open').count();
+            if(!opened)throw Error('Original song player button broken');
+            if(errors.length)throw Error('Browser errors '+JSON.stringify(errors));
+            console.log('AFTERSHOCK_V4_BROWSER_PASS '+JSON.stringify({info,initial,faded,mm,opened,errors:errors.length}));
+            await b.close();
+          })().catch(e=>{console.error('AFTERSHOCK_V4_BROWSER_FAIL',e.stack||e);process.exit(1)});
+          NODE
+      - name: Save visual captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aftershock-comedy-v4-qa
+          path: /tmp/aftershock-comedy-*.png
+          if-no-files-found: ignore
