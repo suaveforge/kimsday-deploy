@@ -1,0 +1,71 @@
+name: Verify KIM'S DAY V10 autoplay and soundtrack
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-v10-audio.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  browser-audio-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Verify original score asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 15); do
+            CODE=$(curl -sSL --connect-timeout 8 --max-time 20 -o /tmp/kimsday-v10.html -w '%{http_code}' https://kimsday.suaveforge.com/ || true)
+            if [ "$CODE" = 200 ] && grep -q 'KIMSDAY-V10-CINEMATIC-AUTOSOUND-20261118' /tmp/kimsday-v10.html; then break; fi
+            sleep 6
+          done
+          test "$CODE" = 200
+          grep -q 'src="assets/judgment-soundtrack-v10.mp3"' /tmp/kimsday-v10.html
+          CODE=$(curl -sSL --connect-timeout 8 --max-time 20 -o /tmp/kimsday-v10.mp3 -w '%{http_code}' https://kimsday.suaveforge.com/assets/judgment-soundtrack-v10.mp3)
+          test "$CODE" = 200
+          test "$(wc -c < /tmp/kimsday-v10.mp3)" -gt 500000
+          ffprobe -v error -show_entries stream=channels,sample_rate -show_entries format=duration -of json /tmp/kimsday-v10.mp3
+          echo 'V10_SOUNDTRACK_ASSET=PASS'
+      - name: Browser test for autoplay, blocked autoplay and explicit mute
+        shell: bash
+        run: |
+          npm install --prefix "$RUNNER_TEMP/kimsday-v10-test" --silent --no-audit --no-fund playwright-core@1.56.1
+          export MODULE_PATH="$RUNNER_TEMP/kimsday-v10-test/node_modules/playwright-core"
+          node <<'NODE'
+          const {chromium}=require(process.env.MODULE_PATH);
+          (async()=>{
+            const chrome=process.env.CHROME||'google-chrome';
+            const browser=await chromium.launch({executablePath:chrome,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const errors=[];
+            const page=await browser.newPage({viewport:{width:1365,height:850}});
+            page.on('pageerror',e=>errors.push(e.message));
+            await page.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:50000});
+            await page.waitForTimeout(2000);
+            let initial=await page.evaluate(()=>({audioPlaying:!document.querySelector('#doomAudio').paused,pending:document.querySelector('#audioLaunch').getAttribute('data-audio-pending'),label:document.querySelector('#audioLaunch').textContent?.trim(),src:document.querySelector('#doomAudio').currentSrc,button:document.querySelector('#audioLaunch').getAttribute('aria-pressed')}));
+            if(!initial.src.includes('judgment-soundtrack-v10.mp3'))throw Error('old audio source '+JSON.stringify(initial));
+            if(initial.audioPlaying)throw Error('expected Chromium block in normal context '+JSON.stringify(initial));
+            if(initial.pending!=='true')throw Error('blocked autoplay did not show honest pending UI '+JSON.stringify(initial));
+            await page.locator('h1').click({force:true});
+            await page.waitForTimeout(2000);
+            let started=await page.evaluate(()=>{let a=document.querySelector('#doomAudio');return {playing:!a.paused,time:a.currentTime,channels:a.captureStream?true:false,pressed:document.querySelector('#audioLaunch').getAttribute('aria-pressed')}});
+            if(!started.playing||started.time<=.15||started.pressed!=='true')throw Error('first gesture failed '+JSON.stringify(started));
+            await page.locator('#audioLaunch').click();
+            let muted=await page.evaluate(()=>({playing:!document.querySelector('#doomAudio').paused,pref:localStorage.getItem('kimsday_audio_manual_mute_v10')}));
+            if(muted.playing||muted.pref!=='1')throw Error('explicit mute failed '+JSON.stringify(muted));
+            await page.reload({waitUntil:'domcontentloaded'});
+            await page.waitForTimeout(1400);
+            let persisted=await page.evaluate(()=>({playing:!document.querySelector('#doomAudio').paused,pref:localStorage.getItem('kimsday_audio_manual_mute_v10')}));
+            if(persisted.playing||persisted.pref!=='1')throw Error('user mute lost '+JSON.stringify(persisted));
+            await browser.close();
+            const auto=await chromium.launch({executablePath:chrome,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--autoplay-policy=no-user-gesture-required']});
+            const p=await auto.newPage();
+            p.on('pageerror',e=>errors.push('autoplay '+e.message));
+            await p.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:50000});
+            await p.waitForTimeout(2300);
+            const allowed=await p.evaluate(()=>({playing:!document.querySelector('#doomAudio').paused,t:document.querySelector('#doomAudio').currentTime,pressed:document.querySelector('#audioLaunch').getAttribute('aria-pressed')}));
+            if(!allowed.playing||allowed.t<.2||allowed.pressed!=='true')throw Error('autoplay permitted but not started '+JSON.stringify(allowed));
+            if(errors.length)throw Error('page errors '+JSON.stringify(errors));
+            console.log('KIMSDAY_V10_SOUND_BEHAVIOR=PASS '+JSON.stringify({initial,started,muted,persisted,allowed,errors:errors.length}));
+            await auto.close();
+          })().catch(e=>{console.error('KIMSDAY_V10_SOUND_BEHAVIOR=FAIL',e.stack||e);process.exit(1)});
+          NODE
