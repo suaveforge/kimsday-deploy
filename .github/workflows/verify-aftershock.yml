@@ -42,7 +42,7 @@ jobs:
            }
            if(resp.status()!==200)throw Error('aftershock HTTP '+resp.status());
            const build=await page.locator('main.page').getAttribute('data-build');
-           if(!build.includes('AFTERSHOCK'))throw Error('wrong build '+build);
+           if(!build.includes('AFTERSHOCK-V2'))throw Error('wrong build '+build);
            if(await page.locator('.as-file').count()!==4)throw Error('dossier count');
            await page.waitForFunction(()=>Array.from(document.querySelectorAll('.as-files img,.aftershock-survivor img')).every(x=>x.complete&&x.naturalWidth>0),null,{timeout:25000});
            const img=await page.locator('.as-files img,.aftershock-survivor img').evaluateAll(els=>els.map(x=>({ok:x.complete&&x.naturalWidth>0,src:x.currentSrc})));
@@ -57,7 +57,7 @@ jobs:
            const dimensions=await page.evaluate(()=>({w:innerWidth,docW:document.documentElement.scrollWidth,docH:document.documentElement.scrollHeight}));
            if(dimensions.docW>dimensions.w+5)throw Error('desktop overflow '+JSON.stringify(dimensions));
            await page.screenshot({path:'/tmp/aftershock-desktop.png',fullPage:true});
-           const jpeg=await page.screenshot({type:'jpeg',quality:38,fullPage:false});
+           const jpeg=await page.screenshot({type:'jpeg',quality:43,fullPage:false});
            console.log('AFTERSHOCK_PREVIEW_B64_BEGIN'+jpeg.toString('base64')+'AFTERSHOCK_PREVIEW_B64_END');
            const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
            mobile.on('pageerror',e=>errors.push('mobile: '+e.message));
