@@ -60,7 +60,7 @@
     });
   });
   function place(){
-    dpr=mobile()?.65:.78;W=innerWidth;
+    dpr=mobile()?.52:.58;W=innerWidth;
     const page=document.querySelector('.page');H=Math.max(innerHeight,page.offsetHeight);
     canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
     canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -95,26 +95,26 @@
     const x=s.x1,y=s.y1,power=s.power,now=elapsed,ambient=s.slot<0;
     if(ambient)ambientHits++;
     bursts.push({x,y,age:0,life:4.8,power,slot:s.slot,noise:rand(0,TAU)});if(bursts.length>3)bursts.shift();
-    const n=ambient?(mobile()?5:9):(mobile()?12:17);
+    const n=ambient?(mobile()?4:6):(mobile()?9:13);
     for(let i=0;i<n;i++){
       const ang=rand(0,TAU),offset=rand(2,26)*power;
       const speed=rand(10,48)*power;
       smokes.push({x:x+Math.cos(ang)*offset,y:y+Math.sin(ang)*offset*.19,vx:Math.cos(ang)*speed*(.9+heat()*.4),vy:-rand(35,106)*power,age:-rand(.02,.62),life:rand(3.3,5.9),radius:rand(17,47)*power,expand:rand(12,26),kind:i%5===0?'ash':'smoke',texture:i%3,spin:rand(-.8,.8)});
     }
     // Distinct expanding mushroom head, spawned with delay as the core rises.
-    for(let i=0;i<(ambient?(mobile()?3:5):(mobile()?7:10));i++){
+    for(let i=0;i<(ambient?(mobile()?2:4):(mobile()?5:7));i++){
       const a=rand(0,TAU),r=rand(2,95)*power;
       smokes.push({x:x+Math.cos(a)*r,y:y-rand(75,115)*power+Math.sin(a)*r*.27,vx:Math.cos(a)*rand(8,35),vy:-rand(15,49)*power,age:-rand(.28,.9),life:rand(3.9,6.3),radius:rand(24,64)*power,expand:rand(16,34),kind:i%7===0?'ash':'smoke',texture:i%3,spin:rand(-.45,.45)});
     }
-    for(let i=0;i<(ambient?(mobile()?5:8):(mobile()?12:18));i++){
+    for(let i=0;i<(ambient?(mobile()?4:6):(mobile()?8:12));i++){
       const a=rand(0,TAU),speed=rand(90,315)*power;
       fireflies.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-rand(0,140),age:0,life:rand(.55,1.55),size:rand(1.2,4.4),trail:[]});
     }
     for(let i=0;i<(ambient?(mobile()?3:4):(mobile()?5:8));i++){
       rubble.push({x,y,vx:rand(-210,210)*power,vy:-rand(130,320)*power,age:0,life:rand(.8,2.4),size:rand(2,9),angle:rand(-PI,PI),av:rand(-6,6)});
     }
-    if(smokes.length>110)smokes.splice(0,smokes.length-110);
-    if(fireflies.length>70)fireflies.splice(0,fireflies.length-70);
+    if(smokes.length>75)smokes.splice(0,smokes.length-75);
+    if(fireflies.length>48)fireflies.splice(0,fireflies.length-48);
     if(rubble.length>60)rubble.splice(0,rubble.length-60);
     if(!ambient){
       const state=siteState[s.slot],el=state.node;
@@ -155,49 +155,43 @@
     ctx.globalAlpha=1;ctx.restore();
   }
   function flashAndShocks(dt){
-    for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.age+=dt;if(b.age>b.life){bursts.splice(i,1);continue;}
-      const a=b.age,p=b.power,core=Math.max(0,1-a/1.22);
-      // Animated expanding mushroom fireball: every lobe changes position, size and glow per frame.
-      // The fire lasts several seconds after the initial flash; it is never a background picture.
-      const remaining=Math.pow(Math.max(0,1-a/b.life),.72),fireRemain=remaining*Math.exp(-a*.50),grow=Math.min(a,3.8);
-      const headY=b.y-(48+grow*34)*p,headR=(64+grow*37)*p;
+    for(let i=bursts.length-1;i>=0;i--){
+      const b=bursts[i];b.age+=dt;
+      if(b.age>b.life){bursts.splice(i,1);continue;}
+      const a=b.age,p=b.power,core=Math.max(0,1-a/1.08);
+      const remain=Math.pow(Math.max(0,1-a/b.life),.76)*Math.exp(-a*.39);
+      const grow=Math.min(a,3.3),headY=b.y-(48+grow*32)*p,headR=(62+grow*34)*p;
       ctx.save();ctx.globalCompositeOperation='lighter';
-      for(let k=0;k<11;k++){
-        const th=TAU*k/11+b.noise*.2+Math.sin(a*1.4+k)*.07;
-        const f=.68+.3*Math.sin(a*2.7+k*1.8);
-        const xx=b.x+Math.cos(th)*headR*.81,yy=headY+Math.sin(th)*headR*.40;
-        const rad=(60+grow*19)*p*f;
-        ctx.globalAlpha=fireRemain*(.8+.13*Math.sin(a*4+k));
-        const sp=textures.flame[k%2];ctx.drawImage(sp,xx-rad,yy-rad,rad*2,rad*2);
+      // Prebaked radial fire textures replace three new gradients, costly filters and 20 separate lobes per frame.
+      for(let k=0;k<7;k++){
+        const th=TAU*k/7+b.noise*.2+Math.sin(a+k)*.05;
+        const xx=b.x+Math.cos(th)*headR*.72,yy=headY+Math.sin(th)*headR*.37;
+        const r=(54+grow*18)*p*(.85+.12*Math.sin(a*2+k));
+        ctx.globalAlpha=remain*(.72+.12*Math.sin(a*3+k));
+        ctx.drawImage(textures.flame[k%2],xx-r,yy-r,r*2,r*2);
       }
-      // Staggered vertical stem of incandescent gas and smoke climbing from the actual crater.
-      for(let k=0;k<9;k++){
-        const z=k/9,xx=b.x+Math.sin(k*2.9+a*2)*23*p;
-        const yy=b.y-z*(118+grow*36)*p;
-        const rr=(32+z*39+grow*8)*p;
-        ctx.globalAlpha=fireRemain*(.83-z*.17);
-        ctx.drawImage(textures.flame[(k+1)%2],xx-rr,yy-rr,rr*2,rr*2);
+      for(let k=0;k<5;k++){
+        const z=k/5,xx=b.x+Math.sin(k*2.9+a*2)*19*p;
+        const yy=b.y-z*(115+grow*36)*p,r=(33+z*43+grow*9)*p;
+        ctx.globalAlpha=remain*(.83-z*.14);
+        ctx.drawImage(textures.flame[(k+1)%2],xx-r,yy-r,r*2,r*2);
       }
-      ctx.restore();ctx.globalAlpha=1;
-      // Continuous molten ground fire after the concussion; the crater visibly cools.
-      const groundR=(90+Math.min(3.8,a)*42)*p;
-      const gl=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,groundR);
-      gl.addColorStop(0,`rgba(255,238,162,${fireRemain*.77})`);
-      gl.addColorStop(.25,`rgba(255,130,35,${fireRemain*.58})`);
-      gl.addColorStop(.65,`rgba(222,48,9,${fireRemain*.22})`);
-      gl.addColorStop(1,'rgba(151,16,3,0)');
-      ctx.save();ctx.translate(b.x,b.y);ctx.scale(1,.26);ctx.fillStyle=gl;
-      ctx.beginPath();ctx.arc(0,0,groundR,0,TAU);ctx.fill();ctx.restore();
-      if(core>0){const radius=(28+195*Math.pow(clamp(a/1.22,0,1),.67))*p;const g=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,radius);
-        g.addColorStop(0,`rgba(255,252,218,${core*.95})`);g.addColorStop(.13,`rgba(255,221,113,${core*.92})`);g.addColorStop(.48,`rgba(255,74,9,${core*.48})`);g.addColorStop(1,'rgba(255,20,4,0)');
-        ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,radius,0,TAU);ctx.fill();
+      const groundR=(100+grow*37)*p;
+      ctx.globalAlpha=remain*.79;
+      ctx.drawImage(textures.flame[0],b.x-groundR,b.y-groundR*.26,groundR*2,groundR*.52);
+      if(core>0){
+        const rr=(25+170*Math.pow(clamp(a/1.08,0,1),.7))*p;
+        ctx.globalAlpha=core*.90;
+        ctx.drawImage(textures.flame[1],b.x-rr,b.y-rr,rr*2,rr*2);
       }
-      let ring=Math.pow(clamp(a/1.42,0,1),.68)*270*p,opacity=Math.pow(1-a/1.42,1.5);
-      if(opacity>0){ctx.save();ctx.translate(b.x,b.y);ctx.scale(1,.32);
-        ctx.shadowColor='#ff7d32';ctx.shadowBlur=22;ctx.strokeStyle=`rgba(255,215,128,${opacity*.92})`;ctx.lineWidth=4+5*opacity;ctx.beginPath();ctx.arc(0,0,ring,0,TAU);ctx.stroke();ctx.restore();}
-      const spread=clamp(a/1.5,0,1),r=95*p+235*p*spread;
-      let haze=ctx.createRadialGradient(b.x,b.y,1,b.x,b.y,r);haze.addColorStop(0,`rgba(255,91,18,${Math.max(0,.20-a*.12)})`);haze.addColorStop(.48,`rgba(255,38,7,${Math.max(0,.13-a*.065)})`);haze.addColorStop(1,'rgba(255,24,0,0)');
-      ctx.fillStyle=haze;ctx.fillRect(b.x-r,b.y-r,r*2,r*2);
+      const opacity=Math.max(0,1-a/1.35);
+      if(opacity>0){
+        const ring=Math.pow(clamp(a/1.35,0,1),.68)*245*p;
+        ctx.save();ctx.translate(b.x,b.y);ctx.scale(1,.31);
+        ctx.strokeStyle='rgba(255,215,128,'+(opacity*.9)+')';
+        ctx.lineWidth=3.5+5*opacity;ctx.beginPath();ctx.arc(0,0,ring,0,TAU);ctx.stroke();ctx.restore();
+      }
+      ctx.restore();
     }
   }
   function hotDebris(dt){
@@ -219,7 +213,7 @@
       const x=im*im*s.x0+2*im*p*s.cx+p*p*s.x1;
       const y=im*im*s.y0+2*im*p*s.cy+p*p*s.y1;
       s.trail.push({x,y});if(s.trail.length>30)s.trail.shift();
-      ctx.save();ctx.globalCompositeOperation='screen';ctx.shadowColor='#ff601c';ctx.shadowBlur=24;
+      ctx.save();ctx.globalCompositeOperation='screen';ctx.shadowColor='#ff601c';ctx.shadowBlur=8;
       for(let k=1;k<s.trail.length;k++){
         const prev=s.trail[k-1],next=s.trail[k];const alpha=.06+.90*(k/s.trail.length)**1.8;
         ctx.strokeStyle=`rgba(255,${Math.round(55+140*k/s.trail.length)},${Math.round(13+117*k/s.trail.length)},${alpha.toFixed(3)})`;
@@ -273,7 +267,7 @@
     }
     ctx.restore();
   }
-  function scheduleFrame(){if(onscreen&&!reduced){const interval=!document.hasFocus()?155:mobile()?(elapsed>45?165:105):(elapsed>45?125:66);renderTimer=setTimeout(()=>requestAnimationFrame(render),interval);}}
+  function scheduleFrame(){if(onscreen&&!reduced){const interval=!document.hasFocus()?190:mobile()?(elapsed>45?165:116):(elapsed>45?142:82);renderTimer=setTimeout(()=>requestAnimationFrame(render),interval);}}
   function render(time){
     if(!onscreen)return;
     scheduleFrame();
@@ -292,7 +286,7 @@
   document.addEventListener('visibilitychange',()=>{onscreen=!document.hidden;prev=0;if(!onscreen){clearTimeout(renderTimer);shots.length=0;fireflies.length=0;rubble.length=0;}else if(!reduced){requestAnimationFrame(render);}});
   addEventListener('pagehide',()=>{onscreen=false;clearTimeout(renderTimer);});
   addEventListener('resize',place,{passive:true});place();
-  window.__kimsdayImpactV7={get state(){return {shots:shots.length,bursts:bursts.length,smoke:smokes.length,particles:fireflies.length,renderScale:dpr,targetFps:mobile()?9:13,hits:events,ambientHits,impactSites:siteState.map(st=>({x:st.anchor,y:st.lift})),lettersVisible:sites.map(x=>x.classList.contains('revealed')&&!x.classList.contains('vanishing')),elapsed:Math.round(elapsed*10)/10};},trigger(index){launch(clamp(index|0,0,2));}};
+  window.__kimsdayImpactV7={get state(){return {shots:shots.length,bursts:bursts.length,smoke:smokes.length,particles:fireflies.length,renderScale:dpr,targetFps:mobile()?8:11,hits:events,ambientHits,impactSites:siteState.map(st=>({x:st.anchor,y:st.lift})),lettersVisible:sites.map(x=>x.classList.contains('revealed')&&!x.classList.contains('vanishing')),elapsed:Math.round(elapsed*10)/10};},trigger(index){launch(clamp(index|0,0,2));}};
   if(reduced){sites.forEach(s=>s.classList.remove('revealed','cooling','detonating','vanishing'));}
   else requestAnimationFrame(render);
 })();
