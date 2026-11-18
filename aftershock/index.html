@@ -609,6 +609,13 @@ body{background:#080303}
  .impact-stage{bottom:448px!important;height:180px!important}
 }
 @media(max-width:380px){.page{min-height:1130px!important}.as-file strong{font-size:11px}.as-file .as-no{font-size:8px}.as-file .as-danger{font-size:8px}.topbar .brand-copy small{display:none}.hero .digits{font-size:10vw!important}}
+
+/* Visual QA: keep the telemetry caption outside the actual countdown display. */
+.as-glitch-label{top:auto!important;bottom:calc(clamp(190px,24svh,255px) + 43px)!important;left:4.5%!important;max-width:32%;font-size:10px!important;opacity:.83;letter-spacing:.10em;transform:rotate(-3deg);white-space:normal}
+.as-file:last-child:after{content:'CLASSIFIED';position:absolute;right:5px;top:9px;border:2px solid #e54d39;padding:3px 5px;color:#faad94;transform:rotate(10deg);font:800 9px monospace;opacity:.62;pointer-events:none}
+.as-file:first-child:after{content:'ON AIR';position:absolute;left:5px;top:8px;border:1px solid #ff6c54;padding:3px 6px;color:#ffe2d7;background:#8e100ed1;box-shadow:0 0 11px #f12;font:900 10px monospace;pointer-events:none}
+@media(max-width:710px){.as-glitch-label{bottom:calc(420px + 19px)!important;left:3%!important;max-width:75%;font-size:9px!important}}
+
 @media(prefers-reduced-motion:reduce){.as-glitch-label{animation:none}}
 
 </style>
@@ -650,7 +657,7 @@ body.stage-8 .page{animation:none!important;}
 </style>
 </head>
 <body>
- <main class="page" data-build="KIMSDAY-AFTERSHOCK-V1-20261118">
+ <main class="page" data-build="KIMSDAY-AFTERSHOCK-V2-20261118">
   <div class="doom-art" aria-hidden="true"></div><div class="ruins-matte" aria-hidden="true"></div>
   <div class="aftershock-art" aria-hidden="true">
     <div class="aftershock-redline"></div><div class="as-burn-scar"></div>
