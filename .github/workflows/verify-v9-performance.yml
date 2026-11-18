@@ -1,0 +1,75 @@
+name: KIMSDAY V9 long-run visual and battery QA
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-v9-performance.yml']
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Browser dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/kimsday-qa" --silent --no-audit --no-fund playwright-core@1.56.1
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "QA_HOME=$RUNNER_TEMP/kimsday-qa" >> "$GITHUB_ENV"
+      - name: Test production desktop and mobile, sound, idle memory and rendering
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const { chromium }=require(process.env.QA_HOME+'/node_modules/playwright-core');
+          (async()=>{
+            const browser=await chromium.launch({executablePath:process.env.CHROME_PATH,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
+            const errors=[];page.on('pageerror',e=>errors.push(e.message));
+            const failures=[];page.on('response',r=>{if(r.url().includes('/assets/')&&r.status()>=400)failures.push(r.url()+' '+r.status())});
+            await page.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:45000});
+            await page.waitForFunction(()=>window.__kimsdayImpactV7&&document.querySelector('.ruins-matte'),{timeout:18000});
+            const state=await page.evaluate(()=>{
+               const a=document.getElementById('audioLaunch'),b=a.getBoundingClientRect(),v=document.getElementById('siegeCanvas');
+               return {build:document.querySelector('.page').dataset.build,audioTop:b.top,audioRight:b.right,audioInsideHeader:!!a.closest('header'),
+                       stage:dims('siegeCanvas'),renderScale:window.__kimsdayImpactV7.state.renderScale,targetFps:window.__kimsdayImpactV7.state.targetFps,
+                       warDisplay:getComputedStyle(document.getElementById('warCanvas')).display,embersDisplay:getComputedStyle(document.getElementById('embers')).display,
+                       ruinsImage:getComputedStyle(document.querySelector('.ruins-matte')).backgroundImage,
+                       horizontalOverflow:document.documentElement.scrollWidth>innerWidth+5};
+               function dims(id){const x=document.getElementById(id);return [x.width,x.height,x.getBoundingClientRect().width,x.getBoundingClientRect().height]}
+            });
+            if(!state.build.includes('V9-LIGHTWEIGHT'))throw Error('old deployment '+state.build);
+            if(!state.audioInsideHeader||state.audioTop>110||state.audioTop<0)throw Error('Audio position '+JSON.stringify(state));
+            if(state.warDisplay!=='none'||state.embersDisplay!=='none')throw Error('Duplicate canvases active');
+            if(!state.ruinsImage.includes('ruins-v9.svg'))throw Error('Detailed background absent');
+            if(state.renderScale>0.9||state.targetFps>20)throw Error('Render scale/FPS unbounded');
+            if(state.horizontalOverflow)throw Error('Desktop overflow');
+            await page.waitForTimeout(3500);
+            const cdp=await page.context().newCDPSession(page);
+            await cdp.send('Performance.enable');
+            const metrics=async()=>Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
+            const before=await metrics();
+            const beforeFx=await page.evaluate(()=>window.__kimsdayImpactV7.state);
+            await page.waitForTimeout(18000);
+            const after=await metrics();
+            const afterFx=await page.evaluate(()=>window.__kimsdayImpactV7.state);
+            if(afterFx.hits<=beforeFx.hits||afterFx.ambientHits<=beforeFx.ambientHits)throw Error('V9 animation stopped '+JSON.stringify({beforeFx,afterFx}));
+            if(afterFx.smoke>170||afterFx.particles>105||afterFx.bursts>5)throw Error('V9 particle cap violated '+JSON.stringify(afterFx));
+            await page.locator('#audioLaunch').click();
+            await page.waitForTimeout(1100);
+            const audio=await page.evaluate(()=>{const a=document.getElementById('doomAudio');return {paused:a.paused,current:a.currentTime,pressed:document.getElementById('audioLaunch').getAttribute('aria-pressed')}});
+            if(audio.paused||audio.current<.3||audio.pressed!=='true')throw Error('Sound not playing '+JSON.stringify(audio));
+            const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+            mobile.on('pageerror',e=>errors.push('mobile:'+e.message));
+            await mobile.goto('https://kimsday.suaveforge.com/',{waitUntil:'domcontentloaded',timeout:45000});
+            await mobile.waitForFunction(()=>window.__kimsdayImpactV7,{timeout:20000});
+            const m=await mobile.evaluate(()=>{const b=document.getElementById('audioLaunch').getBoundingClientRect();return {width:innerWidth,scroll:document.documentElement.scrollWidth,audioVisible:b.width>20&&b.top>=0&&b.right<innerWidth+2,renderScale:window.__kimsdayImpactV7.state.renderScale,targetFps:window.__kimsdayImpactV7.state.targetFps}});
+            if(m.scroll>m.width+5||!m.audioVisible||m.renderScale>.8)throw Error('Mobile failure '+JSON.stringify(m));
+            if(errors.length||failures.length)throw Error('Page errors '+JSON.stringify({errors:errors.slice(0,5),failures:failures.slice(0,5)}));
+            console.log('KIMSDAY_V9_PRODUCTION_QA_PASS',JSON.stringify({state,fx:[beforeFx,afterFx],jsHeapDeltaMb:Math.round((after.JSHeapUsedSize-before.JSHeapUsedSize)/1e5)/10,taskDurationSeconds:Math.round((after.TaskDuration-before.TaskDuration)*100)/100,watchedSeconds:18,audio,mobile:m,pageErrors:errors.length,assetErrors:failures.length}));
+            await browser.close();
+          })().catch(e=>{console.error('KIMSDAY_V9_PRODUCTION_QA_FAIL',e.stack||String(e));process.exit(1)});
+          NODE
